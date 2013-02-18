@@ -1,0 +1,531 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+	<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+
+	<!--<meta name="apple-mobile-web-app-capable" content="yes" />-->
+
+	<title>
+		minimail
+	</title>
+
+	<!--<script src="https://trigger.io/catalyst/target/target-script-min.js#ACBDF007-3B18-4194-9B6B-7FF6F802821C"></script>-->
+	<script type="text/javascript">
+
+		var forge_enabled_if_available = true;
+
+		// Testing Forge usage
+		var useForge = false;
+		if(typeof forge !== 'undefined' && forge_enabled_if_available){
+			useForge = true;
+			forge.enableDebug();
+		}
+
+	</script>
+
+	<!--
+	<link rel="stylesheet/less" type="text/css" href="css/less/bootstrap.less">
+	-->
+
+	<script src="https://getemailbox.com/socket.io/socket.io.js"></script>
+
+	<link href="css/bootstrap.css" type="text/css" rel="stylesheet"> <!-- Uncomment below if switching to Less-compiled -->
+
+	<!-- Extra.css needs to be below less compiler -->
+	<link href="css/extra.css" type="text/css" rel="stylesheet">
+	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
+
+	<!-- Filepicker -->
+	<script type="text/javascript" src="//api.filepicker.io/v1/filepicker.js"></script>
+	<!--<script src="https://api.filepicker.io/v1/filepicker_debug.js"></script>-->
+
+	<!-- Credentials -->
+	<script src="js/app/creds.js"></script>
+
+	<script src="js/libs/jquery-1.7.2.min.js"></script>
+	<script src="js/libs/jquery-ui-1.8.21.custom.min.js"></script>
+	<script src="js/libs/modernizr.2.6.2.dev.js"></script>
+	<script src="js/libs/json2.js"></script>
+	<script src="js/libs/dateFormat.js"></script>
+	<script src="js/libs/underscore-1.3.3.min.js"></script>
+	<script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
+
+	<script src="js/libs/backbone-0.9.2.js"></script>
+	<script src="js/libs/backbone.localStorage-min.js"></script>
+
+	<script src="js/libs/json-formatter.js"></script>
+	<script src="js/libs/date.js"></script>
+	<!-- http://momentjs.com/  would be an alternative -->
+
+	<script src="js/bootstrap/bootstrap-modal.js"></script>
+
+	<!--<script src="js/libs/jquery.ajaxQueue.js"></script>-->
+	<script src="js/libs/jquery.ajaxManager.js"></script>
+	<script src="js/libs/jquery.base64.js"></script>
+	<script src="js/libs/jquery-ui-1.8.21.custom.min.js"></script>
+	<script src="js/libs/jquery.wookmark.min.js"></script>
+	<script src="js/libs/jquery.hoverzoom.js"></script>
+	<!--<script src="js/libs/jquery.masonry-2.1.05.min.js"></script>-->
+	<script src="js/libs/jquery.imagesloaded.min.js"></script>
+
+	<!-- Flexigrid -->
+	<script src="js/libs/jquery.jeditable.js"></script>
+
+	<!-- FancyBox -->
+	<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
+	<link rel="stylesheet" href="js/libs/fancybox//jquery.fancybox.css?v=2.1.3" type="text/css" media="screen" />
+	<script type="text/javascript" src="js/libs/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>
+
+	
+	<!-- <script src="libs/jquery.toObject.js"></script> -->
+
+	<script src="js/libs/less-1.3.0.min.js"></script>
+
+	<!--<script src="https://static.firebase.com/v0/firebase.js"></script>-->
+
+	<script src="js/app/app.js"></script>
+	<script src="js/app/utils.js"></script>
+	<script src="js/app/plugins.js"></script>
+	<script src="js/app/models.js"></script>
+	<script src="js/app/collections.js"></script>
+	<script src="js/app/views.js"></script>
+	<script src="js/app/routes.js"></script>
+	<script src="js/app/helpers.js"></script>
+
+
+	<script>
+
+		$(document).ready(function(){
+			App.init();
+		});
+
+	</script>
+
+
+	<!-- Templates -->
+
+
+
+	<!-- Body Login -->
+	<script id="t_body_login" type="text/x-handlebars-template">
+
+		<div class="container" style2="background: #41A3E9;">
+
+			<div class="intro_window">
+
+				<div class="row">
+
+					<div class="span7" style="font-family: Helvetica; color: #ddd;">
+
+						<h2 style="font-weight:200;margin-bottom:20px;">
+							mini<span style="color: #ccc;">mail</span>
+						</h2>
+
+						<br />
+						<br />
+						<br />
+
+						<!--
+						<h1 style="font-weight: 200;margin-bottom:20px; color: black;">
+							Push the envelope
+						</h1>
+						-->
+
+						<br />
+						<h2 style="color: #333;">
+							<!--Minimail is a better mobile email app. -->
+							Minimail is your open source email app for mobile. 
+							<br />
+							Customizable, extensible, and personalized. 
+
+							<br />
+							<br />
+							<span style="color: #900;">
+								warning: v0.1 - extreme alpha
+							</span>
+
+							<br />
+							<br />
+
+						</h2>
+
+						<p>
+							<a href="https://github.com/emailbox/minimail_mobileapp" class="login2 btn btn-info btn-large">Check it out on GitHub</a>
+						</p>
+
+					</div>
+
+					<div class="span4 offset1" style="overflow: visible;height: 420px;">
+						<!--<img style="border: 1px solid #ccc;max-height: 450px;" src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-07-50.png" />-->
+						<img style="border: 0px;height: 415px;" src="https://dl.dropbox.com/u/6673634/minimailss/phone.png" />
+					</div>
+
+				</div>
+
+			</div>
+
+
+
+			<div class="reasons">
+
+				<div>
+
+					<div class="row">
+
+						<div class="span12 text-center">
+
+							<h2>
+								Benefits and Features
+							</h2>
+
+						</div>
+
+					</div>
+
+					<div class="row">
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Clone on GitHub
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/github.png" />
+								</div>
+
+								<p>
+									Source is available on GitHub, and the emailbox api is documented at https://getemailbox.com/docs
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Native with PhoneGap
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/phonegap.png" />
+								</div>
+
+								<p>
+									Built with HTML/CSS/JS and easily buildable with PhoneGap Build
+								</p>
+
+							</div>
+								
+						</div>
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Leisure Filters
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/leisure.png" />
+								</div>
+
+								<p>
+									Stop receiving notifications, and read Leisure emails on your down time. 
+								</p>
+
+							</div>
+
+						</div>
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Delay Threads
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/delay.png" />
+								</div>
+
+								<p>
+									Pretend an email arrives at a different time
+								</p>
+
+							</div>
+								
+						</div>
+
+
+						<div class="clearfix">
+							&nbsp;
+						</div>
+
+						<div class="span3 reason" style="margin-left: 0px;">
+							
+							<div>
+								<h3>
+									No-type searching
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/notype.png" />
+								</div>
+
+								<p>
+									Most common searches are a tap away, including Recently Viewed, Recently Acted On, and Sent. 
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Search Text
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/search_text.png" />
+								</div>
+
+								<p>
+									Fast access to searching for some text
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Select Multiple Quickly
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/selectmultiple.png" />
+								</div>
+
+								<p>
+									Send attachments from most cloud services (dropbox, box.net, instagram, etc.)
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Photo Replies
+								</h3>
+
+								<div class="preview_image">
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/addphoto.png" />
+								</div>
+
+								<p>
+									Snap a photo in a second
+								</p>
+
+							</div>
+
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+
+			<div class="screenshots">
+
+				<div>
+
+					<div class="row">
+
+						<div class="span12 text-center">
+
+							<h2>
+								Full Screenshots
+							</h2>
+
+						</div>
+
+					</div>
+
+					<div class="row">
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Select Multiple
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-28-40.png" />
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Leisure Filters
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-10-37.png" />
+								</p>
+
+							</div>
+								
+						</div>
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									After Sending
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-10-18.png" />
+								</p>
+
+							</div>
+
+						</div>
+
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Reply with Photo
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-09-59.png" />
+								</p>
+
+							</div>
+								
+						</div>
+
+
+						<div class="clearfix">
+							&nbsp;
+						</div>
+
+						<div class="span3 reason" style="margin-left: 0px;">
+							
+							<div>
+								<h3>
+									View Thread
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-09-20.png" />
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									No-Type Searches
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-08-35.png" />
+								</p>
+
+							</div>
+
+						</div>
+						<div class="span3 reason">
+							
+							<div>
+								<h3>
+									Search by Text
+								</h3>
+
+								<p>
+									<img src="https://dl.dropbox.com/u/6673634/minimailss/Screenshot_2013-02-15-16-09-07.png" />
+								</p>
+
+							</div>
+
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+
+		<a href="https://github.com/emailbox/minimail_mobileapp"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+	</script>
+
+
+	<!-- Default Home View -->
+	<script id="t_body" type="text/x-handlebars-template">
+
+		<div id="header" class="navbar navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="container">
+					<a class="brand" href="index.html">miniMail</a>
+					
+					<a href="#logout" class="btn btn-default pull-right">
+						Logout
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<div id="body_container" class="body_container nudge_down">
+
+		</div>
+
+		<footer class="text-center">
+
+			Questions? nick@getemailbox.com
+
+		</footer>
+
+	</script>
+
+
+
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-36645089-1']);
+	  _gaq.push(['_setDomainName', 'getemailbox.com']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>
+
+</head>
+<body></body>
+</html>

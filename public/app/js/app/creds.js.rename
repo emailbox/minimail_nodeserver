@@ -1,0 +1,9 @@
+
+var tmp_credentials = {
+	base_api_url: "http://getemailbox.com",
+	ui_app_key: "com.ui",
+	fullcontact_api_key: "",
+	filepicker_api_key: "",
+
+	s3_bucket: "https://s3-us-west-1.amazonaws.com/emailbox1/"
+};

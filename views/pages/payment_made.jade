@@ -1,0 +1,55 @@
+doctype 5
+html
+	head
+		
+		title Payment
+				
+		//- CSS
+		link(rel='stylesheet', href='/app/css/bootstrap.css')
+		link(rel='stylesheet', href='/app/css/extra.css')
+
+		//- JS
+		script(type='text/javascript',src='/app/js/libs/jquery-1.7.2.min.js')
+		script(type='text/javascript',src='/app/js/libs/underscore-1.3.3.min.js')
+		
+	body
+		
+		div.body_container.nudge-down
+			div.payment_page
+
+				div.row
+					div.span7.text-center
+
+						img(src="/images/star.png")
+						h3 Payment Complete!
+						hr
+
+						p
+							strong Thanks, your email has been automatically starred in my inbox! 
+						p Confirmation Code: 
+							code
+								strong=details.stripe_token
+						hr
+
+						a(href="http://sponsored.getemailbox.com") Set this up on my email! 
+						
+
+
+		block footer
+			footer
+
+		//- Google Analytics
+		script(type="text/javascript").
+
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-36645089-1']);
+			_gaq.push(['_setDomainName', 'getemailbox.com']);
+			_gaq.push(['_trackPageview']);
+
+			(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+
+
