@@ -1,5 +1,5 @@
 
-# Minimail server-side  
+# Minimail server-side 
 Run your own minimail server instance. Easily deploy to heroku for piggyback SSL and a free dyno. 
 
 ## Install  
@@ -15,6 +15,5 @@ Run your own minimail server instance. Easily deploy to heroku for piggyback SSL
 - Label emails as Leisure
 - Send Push Notifications
 
-## manifest.json  
-You MUST customize the manifest.json
+
 
