@@ -37,7 +37,6 @@ exports.login = function(req, res){
 
 	// Set response Content-Type
 	res.contentType('json');
-	// jsonError(res, 101, 'test');
 
 	var bodyObj = req.body;
 	
@@ -50,22 +49,14 @@ exports.login = function(req, res){
 		return;
 	}
 
-	console.log('data OK');
-
 	// Request updated credentials from Emailbox
 	// - via /api/user
 	models.Api.loginUser(bodyObj)
 		.then(function(user){
-			console.log('logged in');
 			// Succeeded in logging in the user
 			// - log this person in using a cookie (expected to be on filemess.com, not anywhere else)
 
-			console.log('login ok');
-
 			req.session.user = user; // user is OUR version of the user
-
-			console.log('added to session');
-			console.log(user);
 
 			// Return success
 			jsonSuccess(res,'Logged in',{
@@ -77,10 +68,6 @@ exports.login = function(req, res){
 		})
 		.fail(function(result){
 			// Failed to log the user in
-			
-			console.log('failed login2');
-
-			console.log(result);
 			jsonError(res,101,'Unable to log this user in', result);
 		});
 
