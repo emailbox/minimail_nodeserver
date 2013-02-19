@@ -1,0 +1,27 @@
+{
+    "name": "Minimail",
+    "package": "pkg.dev.minimail",
+    "description": "A minimal email client for mobile conversations",
+    "plain_permissions": "Minimail needs access to all your emails",
+    "permissions": {
+        "read": {},
+        "write": {},
+        "storage": false,
+        "events": {
+            "emit": ["Minimail.*", "Email.*", "Thread.*", "AppPkgDevMinimail"],
+            "listen": {
+                "Email.new": {
+                    "url": "https://minimail.herokuapp.com/incoming_email",
+                    "follow": [],
+                    "conditions": {}
+                },
+                "Minimail.wait_until_fired": {
+                    "url": "https://minimail.herokuapp.com/wait_until_fired",
+                    "follow": [],
+                    "conditions": {}
+                }
+            }
+        }
+    },
+    "dependencies": ["pkg.native.email"]
+}
