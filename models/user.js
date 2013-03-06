@@ -11,7 +11,7 @@ var sanitize = validator.sanitize;
 
 
 
-exports.getUser = function(user_token){
+exports.getUser = function(emailbox_id){
 	// Return a User
 	var defer = Q.defer();
 
@@ -24,8 +24,8 @@ exports.getUser = function(user_token){
 		}
 		client.query(
 			'SELECT * FROM f_users ' +
-			'WHERE f_users.user_token=?'
-			,[user_token]
+			'WHERE f_users.emailbox_id=?'
+			,[emailbox_id]
 			, function(error, rows, fields) {
 
 				models.mysql.release(client);

@@ -42,10 +42,13 @@ exports.query = function(url,data,user){
 	var apiRequest = {
 		auth: {
 			app: creds.app_key,
-			user_token: user.user_token
+			access_token: user.access_token
 		},
 		data: data
 	};
+	// console.log('r');
+	// console.log('url: ' + url);
+	// console.log(apiRequest);
 
 	var options = {
 		url: 'https://getemailbox.com/' + url,
@@ -61,6 +64,8 @@ exports.query = function(url,data,user){
 	var outReq = request.post(options, function(e, r, outRes) {
 
 		if(outRes.code != 200){
+			console.log('not 200');
+			console.log(outRes);
 			defer.reject();
 			return;
 		}
