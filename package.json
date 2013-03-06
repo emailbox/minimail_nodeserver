@@ -1,5 +1,5 @@
 {
-  "name": "emailbox-send-to-many",
+  "name": "minimail",
   "version": "0.0.1",
   "private": true,
   "scripts": {
