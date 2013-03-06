@@ -18,7 +18,9 @@ exports.loginUser = function(bodyObj){
 
 		var user = {};
 
-		user.user_token = bodyObj.user_token;
+		user.access_token = bodyObj.access_token;
+		console.log('u');
+		console.log(bodyObj.access_token);
 
 		models.Emailbox.user(user)
 
@@ -45,11 +47,11 @@ exports.loginUser = function(bodyObj){
 						return;
 					}
 					client.query(
-						'INSERT INTO f_users (id, emailbox_id, user_token, created) ' +
+						'INSERT INTO f_users (id, emailbox_id, access_token, created) ' +
 						'VALUES (?, ?, ?, ?) ' +
 						'ON DUPLICATE KEY UPDATE ' +
-						'user_token=?'
-						,[null, result.id, bodyObj.user_token, created, bodyObj.user_token]
+						'access_token=?'
+						,[null, result.id, bodyObj.access_token, created, bodyObj.access_token]
 						, function(error, info, fields) {
 
 							models.mysql.release(client);
@@ -67,7 +69,7 @@ exports.loginUser = function(bodyObj){
 							}
 
 							// Get the full person
-							models.Api.getUser(bodyObj.user_token)
+							models.Api.getUser(result.id)
 								.then(function(user){
 									defer.resolve(user);
 								})
@@ -93,6 +95,8 @@ exports.loginUser = function(bodyObj){
 			})
 
 			.fail(function(result){
+				console.log('result');
+				console.log(result);
 				defer.reject({code:404,msg:result});
 				// jsonError(res,101,'Failed logging in user');
 			});
@@ -104,7 +108,7 @@ exports.loginUser = function(bodyObj){
 };
 
 
-exports.getUser = function(user_token){
+exports.getUser = function(emailbox_id){
 	// Return a User
 	var defer = Q.defer();
 
@@ -117,8 +121,8 @@ exports.getUser = function(user_token){
 		}
 		client.query(
 			'SELECT * FROM f_users ' +
-			'WHERE f_users.user_token=?'
-			,[user_token]
+			'WHERE f_users.emailbox_id=?'
+			,[emailbox_id]
 			, function(error, rows, fields) {
 
 				models.mysql.release(client);
