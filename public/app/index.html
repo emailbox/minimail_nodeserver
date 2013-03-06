@@ -25,6 +25,8 @@
 			forge.enableDebug();
 		}
 
+		usePg = false;
+
 	</script>
 
 	<!--
@@ -79,6 +81,12 @@
 	<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
 	<link rel="stylesheet" href="js/libs/fancybox//jquery.fancybox.css?v=2.1.3" type="text/css" media="screen" />
 	<script type="text/javascript" src="js/libs/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>
+
+	<script src="js/libs/ace/ace.js"></script>
+	<script src="js/libs/ace/mode-javascript.js"></script>
+	<script src="js/libs/ace/mode-css.js"></script>
+	<script src="js/libs/ace/mode-html.js"></script>
+	<script src="js/libs/beautify.js"></script>
 
 	
 	<!-- <script src="libs/jquery.toObject.js"></script> -->
@@ -144,7 +152,7 @@
 
 							<br />
 							<br />
-							<span style="color: #900;">
+							<span class="login" style="color: #900;">
 								warning: v0.1 - extreme alpha
 							</span>
 
@@ -346,7 +354,7 @@
 			</div>
 
 
-			<div class="screenshots">
+			<div class="screenshots nodisplay">
 
 				<div>
 
@@ -488,7 +496,7 @@
 		<div id="header" class="navbar navbar-fixed-top">
 			<div class="navbar-inner">
 				<div class="container">
-					<a class="brand" href="index.html">miniMail</a>
+					<a class="brand" href="index.html">minimail</a>
 					
 					<a href="#logout" class="btn btn-default pull-right">
 						Logout
@@ -503,9 +511,32 @@
 
 		<footer class="text-center">
 
-			Questions? nick@getemailbox.com
-
 		</footer>
+
+	</script>
+
+
+	<script id="t_debug_css" type="text/x-handlebars-template">
+
+		<div class="clearfix">
+
+			<!-- Static HTML -->
+			<div class="view_html">
+				<h3>HTML on Phone 
+					<small id="request_refresh_html">Refresh</small> 
+					<small class="turn" data-turn="on">Turn On</small> 
+					<small class="turn" data-turn="off">Turn Off</small>
+				</h3>
+				<div id="html_editor"></div>
+			</div>
+
+			<!-- Changeable CSS (Ace editor) -->
+			<div class="view_css">
+				<h3>CSS on Phone (editable) <small id="update_remote_css">Update Remote</small></h3>
+				<div id="css_editor"></div>
+			</div>
+
+		</div>
 
 	</script>
 

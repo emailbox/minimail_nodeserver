@@ -142,7 +142,8 @@ body.console {
   padding-top:60px;
   padding-bottom: 60px;
   border-top: 1px solid #ccc;
-  background: #eff;
+  background: #262C36;
+  color: #fff;
 }
 
 .reasons > div,
@@ -153,6 +154,10 @@ body.console {
 
 .screenshots {
   background: white;
+}
+
+.screenshots h2 {
+  color: #333;
 }
 
 .screenshots img {
@@ -182,7 +187,7 @@ body.console {
 }
 
 .reason h3 {
-  color: black;
+  /*color: black;*/
   font-weight: 400;
 }
 
@@ -1077,6 +1082,19 @@ p:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+
+.clearfix {
+  *zoom: 1;
+}
+.clearfix:before,
+.clearfix:after {
+  display: table;
+  content: "";
+}
+.clearfix:after {
+  clear: both;
 }
 
 
@@ -2198,6 +2216,28 @@ td.editable input {
 
 }
 
+
+/* Debug Css */
+
+.view_html {
+  position: relative;
+  float: left;
+  width: 48%;
+  margin-left: 1%;
+}
+.view_css {
+  position: relative;
+  float: right;
+  width: 48%;
+  margin-right: 1%;
+}
+
+
+.view_css > div,
+.view_html > div {
+  width: 100%;
+  min-height: 500px;
+}
 
 
 

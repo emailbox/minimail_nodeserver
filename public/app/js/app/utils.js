@@ -6,6 +6,116 @@ App.Utils = {
 		return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
 	},
 
+	Storage: {
+		// Always use a promise
+
+		get: function(key){
+
+			var dfd = $.Deferred();
+
+			if(useForge){
+
+				forge.prefs.get(key,function(value){
+
+					try {
+						value = JSON.parse(value);
+					} catch(err){
+						dfd.resolve(null);
+						return;
+					}
+
+					dfd.resolve(value);
+
+				},
+				function(error){
+					dfd.resolve(null);
+				});
+
+			} else if(usePg){
+
+				// Open database
+				// - switch Phonegap/cordova to Database instead of localStorage?
+				// - persistent? 
+				// var dbShell = window.openDatabase('minimail', "1.0", database_displayname, "Minimail", 1000000);
+
+				setTimeout(function(){
+					var value = window.localStorage.getItem(key);
+
+					try {
+						value = JSON.parse(value);
+					} catch(err){
+						dfd.resolve(null);
+						return;
+					}
+
+					dfd.resolve(value);
+
+				},1);
+
+			} else {
+
+				setTimeout(function(){
+					var value = localStorage.getItem(key);
+
+					try {
+						value = JSON.parse(value);
+					} catch(err){
+						dfd.resolve(null);
+						return;
+					}
+
+					dfd.resolve(value);
+
+				},1);
+
+			}
+
+			return dfd.promise();
+
+		},
+
+		set: function(key, value){
+
+			var dfd = $.Deferred();
+
+			if(useForge){
+				
+				forge.prefs.set(key, JSON.stringify(value), function(){
+
+					dfd.resolve(true);
+
+				},
+				function(error){
+					clog('set error');
+					clog('key: ' + key);
+					clog(error);
+					dfd.resolve(null);
+				});
+
+			} else if(usePg){
+
+				setTimeout(function(){
+					var tmp = window.localStorage.setItem(key,JSON.stringify(value));
+
+					dfd.resolve(tmp);
+
+				},1);
+
+			} else {
+				
+				setTimeout(function(){
+					var tmp = localStorage.setItem(key,JSON.stringify(value));
+
+					dfd.resolve(tmp);
+
+				},1);
+			}
+
+			return dfd.promise();
+		}
+
+	},
+
 	// Validation
 	validate: {
 		// https://github.com/jzaefferer/jquery-validation/tree/master/demo
@@ -298,6 +408,20 @@ App.Utils = {
 			vars[hash[0]] = hash[1];
 		}
 		return vars;
+	},
+
+	getOAuthParamsInUrl: function(){
+		
+		var oauthParams = {},
+			queryString = location.hash.substring(1),
+			regex = /([^&=]+)=([^&]*)/g,
+			m;
+
+		while (m = regex.exec(queryString)){
+			oauthParams[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+		}
+
+		return oauthParams;
 	},
 
 	nl2br: function(str, is_xhtml) {
@@ -705,13 +829,13 @@ var Api = {
 								css.attr({
 									rel:  "stylesheet",
 									type: "text/css",
-									href: App.Credentials.s3_bucket + App.Credentials.ui_user_token + "/apps/" + app.id + '/css/' + script
+									href: App.Credentials.s3_bucket + App.Credentials.user_token + "/apps/" + app.id + '/css/' + script
 								});
 							});
 
 							// JS
 							$.each(app.scripts.js,function(i,script){
-								var script_url = App.Credentials.s3_bucket + App.Credentials.ui_user_token + "/apps/" + app.id + '/js/' + script;
+								var script_url = App.Credentials.s3_bucket + App.Credentials.user_token + "/apps/" + app.id + '/js/' + script;
 								$.getScript(script_url, function(){
 									// finished loading script (or failed)
 								});
@@ -953,8 +1077,8 @@ var Api = {
 		var data = $.extend({},queryOptions.data);
 		queryOptions.data = {
 							auth: {
-									app: App.Credentials.ui_app_key,
-									user_token: App.Credentials.ui_user_token
+									app: App.Credentials.app_key,
+									access_token: App.Credentials.access_token
 								},
 							data: data
 							};
@@ -1001,8 +1125,8 @@ var Api = {
 		var data = $.extend({},queryOptions.data);
 		queryOptions.data = {
 							auth: {
-									app: App.Credentials.ui_app_key,
-									//user_token: Api.ui_user_token // just missing this field vs. a normal request
+									app: App.Credentials.app_key,
+									//access_token: Api.access_token // just missing this field vs. a normal request
 								},
 							data: data
 							};
@@ -1030,9 +1154,19 @@ var Api = {
 		start_listening: function(){
 			// Start listening on the socket.io feed
 			// return false;
-			console.log('Listening...');
+			console.log('Starting to listen...');
 			var socket = io.connect(App.Credentials.base_api_url + '/'); // SSL
-			socket.emit('room', App.Credentials.ui_user_token); // immediately change room to my unique app user_token
+			var room_login = {
+				app: App.Credentials.app_key,
+				access_token: App.Credentials.access_token,
+				user: App.Credentials.user
+			};
+			socket.on('disconnect',function(){
+				// alert('disconnected');
+			});
+			socket.on('connect',function(){
+				socket.emit('room', JSON.stringify(room_login)); // log into room
+			});
 			socket.on('event', function (new_event) {
 
 				// See if Event.name exists

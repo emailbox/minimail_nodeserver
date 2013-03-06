@@ -56,11 +56,136 @@ App.Views.Body = Backbone.View.extend({
 		// if(that.subCsv){
 		// 	that.subCsv.close();
 		// }
-		var subCsv = new App.Views.Csv({
+		var subDebugCss = new App.Views.DebugCss({
 			// el: csv_el
 		});
-		App.router.showView('body',subCsv);
+		$(this.el).append(subDebugCss);
+		App.router.showView('subDebugCss',subDebugCss);
 		// that.subCsv.render();
+
+		return this;
+	}
+});
+
+
+App.Views.DebugCss = Backbone.View.extend({
+	
+	el: '#body_container',
+
+	events: {
+		'click #request_refresh_html' : 'request_html_refresh',
+		'click #update_remote_css' : 'update_remote_css',
+		'click .turn' : 'turn'
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'render_editor');
+
+	},
+
+	render_editor: function(){
+		var that = this;
+
+		// HTML
+		html_editor = ace.edit("html_editor");
+		var HtmlMode = require("ace/mode/html").Mode;
+		html_editor.getSession().setMode(new HtmlMode());
+		//editor_json.getSession().setFoldStyle('markbegin'); // can't get folding to work
+		html_editor.setBehavioursEnabled(false); // turn off auto-complete brackets (annoying)
+		html_editor.getSession().setValue("Loading HTML (may take a minute)");
+
+		// CSS
+		css_editor = ace.edit("css_editor");
+		var CssMode = require("ace/mode/css").Mode;
+		css_editor.getSession().setMode(new CssMode());
+		//editor_json.getSession().setFoldStyle('markbegin'); // can't get folding to work
+		css_editor.setBehavioursEnabled(false); // turn off auto-complete brackets (annoying)
+		css_editor.getSession().setValue("Loading CSS (may take a minute)");
+
+	},
+
+
+	turn: function(ev){
+		var that = this;
+			elem = ev.currentTarget;
+
+		var text = $(elem).attr('data-turn');
+
+		// Turn on cssdebug on the phone
+		Api.event({
+			data: {
+				event: 'AppMinimailDebugCss.turn',
+				obj: text
+			},
+			success: function(response){
+				response = JSON.parse(response);
+			}
+		});
+
+		return false;
+	},
+
+	request_html_refresh: function(ev){
+
+		// Get and emit HtmlMode
+		Api.event({
+			data: {
+				event: 'AppMinimailDebugHtml.request_refresh',
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				console.log('PHONE RESPONSE');
+				console.log(response);
+			}
+		});
+
+		return false;
+	},
+
+	update_remote_css: function(ev){
+
+		console.log('val');
+		console.log(css_editor.getSession().getValue());
+
+		// Get and emit HtmlMode
+		Api.event({
+			data: {
+				event: 'AppMinimailDebugCss.web_update',
+				obj: {
+					css: css_editor.getSession().getValue()
+				}
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				console.log('PHONE RESPONSE');
+				console.log(response);
+			}
+		});
+
+		return false;
+	},
+
+	render: function() {
+
+		var that = this;
+
+		// Data
+		// var data = this.options.accounts.UserGmailAccounts;
+
+		// Should start the updater for accounts
+		// - have a separate view for Accounts?
+
+		// Template
+		var template = App.Utils.template('t_debug_css');
+
+		// Write HTML
+		$(this.el).html(template());
+
+		this.render_editor();
+
+		// Track changes
+		// track changes to files
 
 		return this;
 	}
@@ -1066,8 +1191,11 @@ App.Views.BodyLogin = Backbone.View.extend({
 		// Start OAuth process
 
 		var p = {
-			app_id : App.Credentials.ui_app_key,
-			callback : [location.protocol, '//', location.host, location.pathname].join('')
+			response_type: 'token',
+			client_id : App.Credentials.app_key,
+			redirect_uri : [location.protocol, '//', location.host, location.pathname].join('')
+			// state // optional
+			// x_user_id // optional	
 		};
 		var params = $.param(p);
 		

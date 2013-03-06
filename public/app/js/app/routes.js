@@ -84,18 +84,18 @@ App.Router = Backbone.Router.extend({
 
 		// Unless user_token is already in querystring
 		
-		if(typeof App.Credentials.ui_user_token != 'string' || App.Credentials.ui_user_token.length < 1){
+		if(typeof App.Credentials.access_token != 'string' || App.Credentials.access_token.length < 5){
 			
 			var qs = App.Utils.getUrlVars();
 
-			if(typeof qs.user_token == "string"){
+			if(typeof qs.access_token == "string"){
 				// Have a user_token
 				// - save it to localStorage
 
-				localStorage.setItem('ui_user_token',qs.user_token);
+				// localStorage.setItem('user_token',qs.user_token);
 				
-				// Reload page, back to #home
-				window.location = [location.protocol, '//', location.host, location.pathname].join('');
+				// // Reload page, back to #home
+				// window.location = [location.protocol, '//', location.host, location.pathname].join('');
 			} else {
 				// Show login splash screen
 				var page = new App.Views.BodyLogin();
@@ -135,9 +135,12 @@ App.Router = Backbone.Router.extend({
 		// alert('Logging out');
 
 		// Reset user_token
-		localStorage.setItem('ui_user_token','');
 		
-		window.location = [location.protocol, '//', location.host, location.pathname].join('');
+		App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', null);
+		App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', null)
+			.then(function(){
+				window.location = [location.protocol, '//', location.host, location.pathname].join('');
+			});
 
 	},
 
