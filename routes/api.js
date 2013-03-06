@@ -31,7 +31,7 @@ function ping(req,res){
 }
 
 exports.login = function(req, res){
-	// A user is trying to login using an emailbox user_token
+	// A user is trying to login using an emailbox access_token
 
 	console.log('exports.login');
 
@@ -44,8 +44,8 @@ exports.login = function(req, res){
 		jsonError(res, 101, "Expecting object");
 		return;
 	}
-	if(typeof bodyObj.user_token != "string"){
-		jsonError(res, 101, "Expecting user_token",bodyObj);
+	if(typeof bodyObj.access_token != "string"){
+		jsonError(res, 101, "Expecting access_token",bodyObj);
 		return;
 	}
 
