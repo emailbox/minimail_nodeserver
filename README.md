@@ -2,7 +2,7 @@
 Run your own minimail server instance. Easily deploy to heroku for piggyback SSL and a free dyno. 
 
 ## Install  
-1. Register as an emailbox developer at http://getemailbox.com/first
+1. Register as an emailbox developer at http://getemailbox.com/login/first
 1. Fork this repo
 1. Rename `credentials.example.json` to `credentials.json` and enter your MySQL credentials  
 1. Create MySQL table using https://github.com/emailbox/minimail_nodeserver/blob/master/mysql_schema.sql  
