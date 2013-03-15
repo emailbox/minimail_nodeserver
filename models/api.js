@@ -19,7 +19,8 @@ exports.loginUser = function(bodyObj){
 		var user = {};
 
 		user.access_token = bodyObj.access_token;
-		console.log('u');
+
+		console.log('access_token:');
 		console.log(bodyObj.access_token);
 
 		models.Emailbox.user(user)
@@ -108,6 +109,122 @@ exports.loginUser = function(bodyObj){
 };
 
 
+exports.updateUser = function(userObj){
+	// Check emailbox for a user based on the submitted credentials
+
+	var defer = Q.defer();
+
+	process.nextTick(function(){
+
+		// Build user object
+		var user = {
+			access_token: bodyObj.access_token // used for requesting Emailbox user (later)
+		};
+
+		// Only updating:
+		// - android_reg_id
+		// - ios_something (todo...)
+		var updating = {};
+
+		user.android_reg_id = bodyObj.android_reg_id || null;
+
+		console.log('android_reg_id:');
+		console.log(bodyObj.android_reg_id);
+
+		if(user.android_reg_id){
+			// Updating android_reg_id
+
+			// Validate android_reg_id
+			if(typeof user.android_reg_id != 'string'){
+				defer.reject({code: 404, msg: 'Invalid android_reg_id'});
+				return;
+			} else {
+				updating['android_reg_id'] = user.android_reg_id;
+			}
+		}
+
+		// Updating anything??
+		if(!_.size(updating)){
+			defer.reject({code: 404, msg:'No valid update requests provided'});
+			return;
+		}
+
+		// Get the User from Emailbox
+		models.Emailbox.user(user)
+
+			.then(function(result){
+				// Did we get authenticated with Emailbox?
+
+				if(typeof result.id != 'string'){
+					defer.reject(2);
+					return;
+				}
+
+				// Sweet, we have a valid user
+
+				// Update the user_token for this user
+				// - or if they don't exist in the DB, add them
+
+				var created = new Date();
+				created = created.getTime();
+
+				// Get keys to update
+				var keys = [];
+				for(var k in obj) keys.push(k);
+
+				// Add user's id
+
+
+				// Try and update the user's things
+				models.mysql.acquire(function(err, client) {
+					if (err) {
+						defer.reject({code:404,msg:'mysql failure'});
+						return;
+					}
+					client.query(
+						'UPDATE * FROM f_users ' +
+						'SET android_reg_id=? ' +
+						'WHERE id=?'
+						,[bodyObj.android_reg_id, result.id]
+						, function(error, info, fields) {
+
+							models.mysql.release(client);
+
+							if (error) {
+								defer.reject({code:101,msg:'Failed INSERT or UPDATE'});
+								return false;
+							}
+
+							// Inserted anybody?
+							console.log('info');
+							console.log(info);
+
+							// Check if updated
+							// - expect a single entry to be updated
+							defer.resolve(true);
+
+						}
+					);
+
+				});
+
+
+			})
+
+			.fail(function(result){
+				console.log('result');
+				console.log(result);
+				defer.reject({code:404,msg:result});
+				// jsonError(res,101,'Failed logging in user');
+			});
+
+	});
+
+	return defer.promise;
+
+};
+
+
 exports.getUser = function(emailbox_id){
 	// Return a User
 	var defer = Q.defer();
@@ -148,4 +265,49 @@ exports.getUser = function(emailbox_id){
 
 
 };
+
+
+// exports.getEmailboxUserSettings = function(emailbox_id){
+// 	// Return a User
+// 	var defer = Q.defer();
+
+// 	var searchData = {
+// 		model: 'Email',
+// 		conditions: {
+// 			_id: email._id
+// 		},
+// 		fields: ['app.AppPkgDevMinimail',
+// 				 'attributes.thread_id',
+// 				 'original.TextBody',
+// 				 'original.labels',
+// 				 'original.headers.From',
+// 				 'original.headers.Subject',
+// 				 'original.ParsedData.[0]',
+// 				 'original.ParsedData.0'
+// 				 ],
+// 		limit: 1
+// 	};
+
+// 	console.log('Searching');
+
+// 	var getUser = Q.defer();
+
+// 	// Get the local user_id
+// 	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
+// 		.then(function(local_user){
+// 			// console.log('User');
+// 			// console.log(local_user);
+// 			getUser.resolve(local_user);
+// 		});
+
+// 	getUser.promise.then(function(local_user){
+
+// 		models.Emailbox.search(searchData,bodyObj.auth)
+// 			.then(function(emails){
+
+
+// 	return defer.promise;
+
+
+// };
 
