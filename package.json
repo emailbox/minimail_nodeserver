@@ -22,6 +22,8 @@
     "stylus" : "*",
     "validator" : "*",
     "node-uuid" : "*",
-    "stripe" : "*"
+    "stripe" : "*",
+    "urban-airship" : "0.2.4",
+    "node-gcm" : "0.9.3"
   }
 }
