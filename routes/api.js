@@ -11,6 +11,10 @@ var querystring = require('querystring');
 // uuid
 var uuid = require('node-uuid');
 
+// Urban Airship Push Notifications
+var UA = require('urban-airship');
+ua = new UA(creds.ua_app_key, creds.ua_app_secret, creds.ua_app_master_secret);
+
 // Handle a ping from an event
 function ping(req,res){
 	// Handle a Ping request
@@ -29,6 +33,80 @@ function ping(req,res){
 
 	return false;
 }
+
+exports.test_register = function(req, res){
+	// testing push notifications
+
+	// Triggered by an Event from emailbox
+	// - send a Push Notification with arbitrary text to a device we're using. 
+
+	// Register device
+	var test_token;
+	ua.registerDevice(test_token, function(err) {
+		if(err){
+			console.log('Error w/ Push Test');
+			console.log(err);
+			return;
+		}
+		console.log('No errors registerDevice!');
+	});
+
+};
+
+exports.test_push = function(req, res){
+
+	var test_token = "APA91bHNcKn5YXUsAy4tONQEk7HqCKzE8vqvw-hCbtzP3BR1xyj4ZBj55uzwXT-GNBA3n6s_NiQCHvPE7SmCU3YNB7qs9nC2--GNF2ReUSB-jahZCEgZBwrCsvUSLljANqqvjJr3E605z6vrAwB0r73qeuQC-Lcuig";
+
+	console.log('Starting registration');
+
+	// Test pushing to User
+	// exports.pushToAndroid = function(registration_id, data, collapseKey, timeToLive, numRetries){
+	models.Api.pushToAndroid(test_token, {p1: 'test1'}, 'Test Collapse', null, null)
+		.then(function(pushResult){
+			console.log('Result');
+			console.log(pushResult.result);
+			if(pushResult.err){
+				console.log('Error with result');
+				console.log(pushResult.err);
+			}
+			if(!pushResult.result.success){
+				// Seems to have had an error
+				console.log('--result.success not 1');
+			}
+		});
+
+	// ua.registerDevice(test_token, {'alias' : 'test1'}, function(err) {
+	// 	if(err){
+	// 		console.log('Error w/ Push Test');
+	// 		console.log(err);
+	// 		return;
+	// 	}
+	// 	console.log('No errors registerDevice!');
+	// });
+
+	res.send('done test');
+	return;
+
+	// // Send Push Notification
+	// var pushData = {
+	// 	"apids": [
+	// 		test_token,
+	// 	],
+	// 	"android": {
+	// 		 "alert": "Hello from Urban Airship!",
+	// 		 "extra": {"a_key":"a_value"}
+	// 	}
+	// };
+	// console.log('sending');
+	// ua.pushNotification("/api/push", pushData, function(error) {
+	// 	console.log('err');
+	// 	console.log(error);
+	// });
+	// console.log('after sending');
+
+	// res.send('done');
+
+};
 
 exports.login = function(req, res){
 	// A user is trying to login using an emailbox access_token
@@ -54,7 +132,7 @@ exports.login = function(req, res){
 	models.Api.loginUser(bodyObj)
 		.then(function(user){
 			// Succeeded in logging in the user
-			// - log this person in using a cookie (expected to be on filemess.com, not anywhere else)
+			// - log this person in using a cookie
 
 			req.session.user = user; // user is OUR version of the user
 
@@ -75,6 +153,51 @@ exports.login = function(req, res){
 	// - update or insert if we do
 
 };
+
+// exports.create_defaults = function(req, res){
+// 	// A user is trying to update some local parameters
+
+// 	console.log('exports.login');
+
+// 	// Set response Content-Type
+// 	res.contentType('json');
+
+// 	var bodyObj = req.body;
+	
+// 	if(typeof bodyObj != "object"){
+// 		jsonError(res, 101, "Expecting object");
+// 		return;
+// 	}
+// 	if(typeof bodyObj.access_token != "string"){
+// 		jsonError(res, 101, "Expecting access_token",bodyObj);
+// 		return;
+// 	}
+
+// 	// Request updated credentials from Emailbox
+// 	// - via /api/user
+// 	models.Api.updateUser(bodyObj)
+// 		.then(function(user){
+// 			// Succeeded updated user
+// 			// 
+// 			req.session.user = user; // user is OUR version of the user
+
+// 			// Return success
+// 			jsonSuccess(res,'Updated user',{
+// 				user: {
+// 					id: user.id
+// 				}
+// 			});
+
+// 		})
+// 		.fail(function(result){
+// 			// Failed to log the user in
+// 			jsonError(res,101,'Unable to log this user in', result);
+// 		});
+
+// 	// Do we already have this User ID?
+// 	// - update or insert if we do
+
+// };
 
 exports.logout = function(req, res){
 	req.session.user = null;
@@ -102,6 +225,7 @@ exports.incoming_email = function(req, res){
 	// - todo...
 
 	// Wait a few seconds for email to be fully parsed by Thread, etc.
+	// - 2 seconds
 	setTimeout(function(){
 
 		// Get the Email
@@ -124,20 +248,71 @@ exports.incoming_email = function(req, res){
 					 ],
 			limit: 1
 		};
+		var userSearchData = {
+			model: 'AppMinimailSettings', // Settings for the App
+			conditions: {
+				_id: 1 // set the _id to 1 to guarantee the same settings retrieved (not sort and limit)
+			},
+			fields: [],
+			limit: 1
+		};
 
 		console.log('Searching');
 
+		// Create deferred for gathering user information from local db and emailbox (settings, email received, etc.)
 		var getUser = Q.defer();
 
-		// Get the local user_id
+		// Get the local user_id, and the Emailbox User
 		models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
 			.then(function(local_user){
 				// console.log('User');
 				// console.log(local_user);
-				getUser.resolve(local_user);
+
+				// console.log('auth');
+				// console.log(bodyObj.auth);
+				// console.log('--');
+
+				// Get settings stored on Emailbox
+				models.Emailbox.search(userSearchData,bodyObj.auth)
+					.then(function(eUserSettings){
+						// console.log('eUserSettings');
+						// console.log(eUserSettings);
+						// eUserSettings[0].AppPkgDevMinimailSettings
+						
+						// Got the emailbox User settings?
+						if(eUserSettings.length != 1){
+							// Not created yet
+							// - create them?
+
+							// Create the emailbox_user_settings
+							models.User.create_emailbox_settings(bodyObj.auth)
+								.then(function(err, emailbox_user_settings_after_created){
+									// Back from creating/updating emailbox_settings
+									// - have data
+									if(err){
+										// Damnit, something broke
+										// - continue, but not gonna be sending Push Notifications I guess
+										console.log('Err create_emailbox_settings');
+										getUser.resolve([local_user, null]);
+										return;
+									}
+									// Resolve promise with new emailbox settings for user
+									getUser.resolve([local_user, emailbox_user_settings_after_created]);
+								});
+							return; // don't continue to resolving promise
+						}
+
+						// Got the local and emailbox user settings, continue on
+						// console.log('Emailbox User Settings');
+						// console.log(eUserSettings[0]);
+						getUser.resolve([local_user, eUserSettings[0]]);
+					});
 			});
 
-		getUser.promise.then(function(local_user){
+		getUser.promise.then(function(user){
+
+			var local_user = user[0],
+				emailbox_user_settings = user[1];
 
 			models.Emailbox.search(searchData,bodyObj.auth)
 				.then(function(emails){
@@ -157,6 +332,7 @@ exports.incoming_email = function(req, res){
 					// Parse links
 					// - this regex actually works
 					var links = email.Email.original.TextBody.match(/[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/g);
+
 					// Update Email
 					// try {
 					// 	links.forEach(function(item){
@@ -369,32 +545,90 @@ exports.incoming_email = function(req, res){
 								// Not a leisure email
 								console.log('NOT leasure email');
 
-								// Send Push Notification
-								var parseRequest = {
-									channels: ['c_' + local_user.id],
-									push_time: new Date(),
-									expiration_interval: 60,
-									data: {
-										alert: email.Email.original.TextBody.substr(0,100),
-										threadid: email.Email.attributes.thread_id,
-										summary: email.Email.original.TextBody.substr(0,100),
-										title: email.Email.original.headers.Subject
-									}
-								};
 
 								// Send Push Notification
 								// console.log('WOULD HAVE SENT PUSH NOTIFICATION');
 								// return;
-								models.Parse.pushNotification(parseRequest,function(e, r, outRes){
-									// result
-									if(e){
-										console.log('==Failed pushNotification');
-										console.log(e);
-										return;
+
+								// Update the "done" status to 0 for the Thread
+								var updateThreadData = {
+									model: 'Thread',
+									id: email.Email.attributes.thread_id,
+									paths: {
+										"$set" : {
+											"app.AppPkgDevMinimail.done" : 0
+										}
 									}
-									console.log('Parse Result');
-									console.log(outRes);
-								});
+								};
+								// Update Thread
+								models.Emailbox.update(updateThreadData,bodyObj.auth)
+									.then(function(dataResponse){
+										if(dataResponse != 1){
+											console.log('Failed updating thread done status');
+											console.log(dataResponse);
+											return;
+										}
+										console.log('Updated thread done status');
+									});
+
+								try {
+									// Get android_reg_id
+									var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
+									if(android_reg_id && android_reg_id.length > 10){
+
+										var dataToPush = {
+											alert: email.Email.original.TextBody.substr(0,100),
+											threadid: email.Email.attributes.thread_id,
+											summary: email.Email.original.TextBody.substr(0,100),
+											title: email.Email.original.headers.Subject
+										};
+
+										// Push to Android
+										models.Api.pushToAndroid(android_reg_id, dataToPush, 'New Emails', null, null)
+											.then(function(pushResult){
+												console.log('Result');
+												console.log(pushResult.result);
+												if(pushResult.err){
+													console.log('Error with result');
+													console.log(pushResult.err);
+												}
+												if(!pushResult.result.success){
+													// Seems to have had an error
+													console.log('--result.success not 1');
+												}
+											});
+
+									}
+
+								} catch(err){
+									// Failed sending Push for some reason
+									console.log("Failed sending Push when we really wanted to");
+									console.log(err);
+								}
+
+								// // Send Push Notification
+								// var parseRequest = {
+								// 	channels: ['c_' + local_user.id],
+								// 	push_time: new Date(),
+								// 	expiration_interval: 60,
+								// 	data: {
+								// 		alert: email.Email.original.TextBody.substr(0,100),
+								// 		threadid: email.Email.attributes.thread_id,
+								// 		summary: email.Email.original.TextBody.substr(0,100),
+								// 		title: email.Email.original.headers.Subject
+								// 	}
+								// };
+
+								// models.Parse.pushNotification(parseRequest,function(e, r, outRes){
+								// 	// result
+								// 	if(e){
+								// 		console.log('==Failed pushNotification');
+								// 		console.log(e);
+								// 		return;
+								// 	}
+								// 	console.log('Parse Result');
+								// 	console.log(outRes);
+								// });
 
 							}
 
@@ -426,39 +660,113 @@ exports.wait_until_fired = function(req, res){
 
 	var getUser = Q.defer();
 
-	// Get the local user_id
+	// Get the local user_id, and the Emailbox User
 	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
 		.then(function(local_user){
-			console.log('User');
-			console.log(local_user);
-			getUser.resolve(local_user);
-		});
 
-	getUser.promise
-		.then(function(local_user){
-
-			// Send Push Notification
-			var parseRequest = {
-				channels: ['c_' + local_user.id],
-				push_time: new Date(),
-				expiration_interval: 60,
-				data: {
-					alert: bodyObj.obj.text,
-					title: "Email Reminder"
-				}
+			var userSearchData = {
+				model: 'AppMinimailSettings', // Settings for the App
+				conditions: {
+					_id: 1 // set the _id to 1 to guarantee the same settings retrieved (not sort and limit)
+				},
+				fields: [],
+				limit: 1
 			};
 
-			// REST API request to send Push Notification
-			models.Parse.pushNotification(parseRequest,function(e, r, outRes){
-				// result
-				if(e){
-					console.log('==Failed pushNotification');
-					console.log(e);
-					return;
+			// Get settings stored on Emailbox
+			models.Emailbox.search(userSearchData,bodyObj.auth)
+				.then(function(eUserSettings){
+					// Got the emailbox User settings?
+					if(eUserSettings.length != 1){
+						// Not created yet
+						// - create them?
+
+						// Create the emailbox_user_settings
+						models.User.create_emailbox_settings(bodyObj.auth)
+							.then(function(err, emailbox_user_settings_after_created){
+								// Back from creating/updating emailbox_settings
+								// - have data
+								if(err){
+									// Damnit, something broke
+									// - continue, but not gonna be sending Push Notifications I guess
+									console.log('Err create_emailbox_settings');
+									getUser.resolve([local_user, null]);
+									return;
+								}
+								// Resolve promise with new emailbox settings for user
+								getUser.resolve([local_user, emailbox_user_settings_after_created]);
+							});
+						return; // don't continue to resolving promise
+					}
+
+					getUser.resolve([local_user, eUserSettings[0]]);
+				});
+		});
+
+
+	getUser.promise
+		.then(function(user){
+
+			var local_user = user[0],
+				emailbox_user_settings = user[1];
+
+
+			try {
+				// Get android_reg_id
+				var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
+				if(android_reg_id && android_reg_id.length > 10){
+
+					var dataToPush = {
+						threadid: bodyObj.obj.threadid,
+						alert: bodyObj.obj.text,
+						title: "Email Reminder"
+					};
+
+					// Push to Android
+					models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
+						.then(function(pushResult){
+							console.log('Result');
+							console.log(pushResult.result);
+							if(pushResult.err){
+								console.log('Error with result');
+								console.log(pushResult.err);
+							}
+							if(!pushResult.result.success){
+								// Seems to have had an error
+								console.log('--result.success not 1');
+							}
+						});
+
 				}
-				console.log('Parse Result');
-				console.log(outRes);
-			});
+
+			} catch(err){
+				// Failed sending Push for some reason
+				console.log("Failed sending Push when we really wanted to (for a wait)");
+				console.log(err);
+			}
+
+			// // Send Push Notification
+			// var parseRequest = {
+			// 	channels: ['c_' + local_user.id],
+			// 	push_time: new Date(),
+			// 	expiration_interval: 60,
+			// 	data: {
+			// 		alert: bodyObj.obj.text,
+			// 		title: "Email Reminder"
+			// 	}
+			// };
+
+			// // REST API request to send Push Notification
+			// models.Parse.pushNotification(parseRequest,function(e, r, outRes){
+			// 	// result
+			// 	if(e){
+			// 		console.log('==Failed pushNotification');
+			// 		console.log(e);
+			// 		return;
+			// 	}
+			// 	console.log('Parse Result');
+			// 	console.log(outRes);
+			// });
 
 			return false;
 
