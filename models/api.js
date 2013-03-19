@@ -5,6 +5,10 @@
 // Promises
 var Q = require('q');
 
+// Node-gcm (Google Cloud Messaging)
+var gcm = require('node-gcm');
+var gcm_sender = new gcm.Sender('AIzaSyComNH2V2K3GErqbMkriU3obkunpVzv5Wo');
+
 // validator
 var validator = require('validator');
 var sanitize = validator.sanitize;
@@ -128,8 +132,8 @@ exports.updateUser = function(userObj){
 
 		user.android_reg_id = bodyObj.android_reg_id || null;
 
-		console.log('android_reg_id:');
-		console.log(bodyObj.android_reg_id);
+		// console.log('android_reg_id:');
+		// console.log(bodyObj.android_reg_id);
 
 		if(user.android_reg_id){
 			// Updating android_reg_id
@@ -263,6 +267,62 @@ exports.getUser = function(emailbox_id){
 
 	return defer.promise;
 
+
+};
+
+exports.pushToAndroid = function(registration_id, data, collapseKey, timeToLive, numRetries){
+	// Send a Push Message to a user
+
+	// Create deferred
+	var defer = Q.defer();
+
+	data = data || {};
+	collapseKey = collapseKey || 'New Alerts';
+	timeToLive = timeToLive || 10;
+	numRetries = numRetries || 4;
+
+	// Android Push
+	// - everybody, for now
+	var message = new gcm.Message();
+	var registrationIds = [];
+
+	// Optional
+	Object.keys(data).forEach(function(key) {
+		message.addData(key, data[key]);
+	});
+	message.collapseKey = collapseKey;
+	// message.delayWhileIdle = true; // delay if not visible on the app? 
+	message.timeToLive = timeToLive;
+
+	// Add to registrationIds array
+	// - at least one required
+	registrationIds.push(registration_id);
+
+	// Parameters: message-literal, registrationIds-array, No. of retries, callback-function
+	gcm_sender.send(message, registrationIds, numRetries, function (err, result) {
+
+		// console.log('GCM result');
+		// console.log(result);
+
+		/*
+		Example result:
+		{ multicast_id: 6673058968507728000,
+		  success: 1,
+		  failure: 0,
+		  canonical_ids: 0,
+		  results: [ { message_id: '0:1363393659420351%b678d5c0002efde3' } ] }
+		 */
+
+		// Result deferred
+		defer.resolve({
+			err: err,
+			result: result
+		});
+
+	});
+
+	// Return promise
+	return defer.promise;
 
 };
 
