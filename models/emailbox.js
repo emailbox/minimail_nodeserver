@@ -16,7 +16,7 @@ exports.search = function(data,user){
 	return models.Emailbox.query('api/search',data,user);
 };
 exports.write = function(data,user){
-	return models.Emailbox.query('api/update',data,user);
+	return models.Emailbox.query('api/write',data,user);
 };
 exports.update = function(data,user){
 	return models.Emailbox.query('api/update',data,user);
@@ -50,6 +50,9 @@ exports.query = function(url,data,user){
 	// console.log('url: ' + url);
 	// console.log(apiRequest);
 
+	// console.log('q user');
+	// console.log(user);
+
 	var options = {
 		url: 'https://getemailbox.com/' + url,
 		port: 80,
@@ -64,7 +67,7 @@ exports.query = function(url,data,user){
 	var outReq = request.post(options, function(e, r, outRes) {
 
 		if(outRes.code != 200){
-			console.log('not 200');
+			console.log('Emailbox response: NOT 200');
 			console.log(outRes);
 			defer.reject();
 			return;
