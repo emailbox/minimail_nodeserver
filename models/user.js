@@ -183,3 +183,42 @@ exports.get_local_by_emailbox_id = function(emailbox_id){
 	return defer.promise;
 };
 
+
+exports.create_emailbox_settings = function(userAuth){
+	// Return settings for the auth'd user
+
+	// Create deferred
+	var defer = Q.defer();
+
+	// Default data to save to emailbox
+	var defaultData = {
+		'_id' : 1,
+		android_reg_id: null // push.android_reg_id
+	};
+
+	// Combine with defaultData
+	var userData = {
+		model: 'AppMinimailSettings',
+		obj: defaultData
+	};
+
+	// Write to emailbox
+	models.Emailbox.write(userData,userAuth)
+		.then(function(result){
+			// Successfully wrote settings
+
+			// Resolve
+			// - missing createdAt and updatedAt in response
+			defer.resolve(null, defaultData);
+		})
+		.fail(function(err){
+			console.log('Failed write');
+			defer.reject(err);
+			// defer.resolve(err,null);
+		});
+
+	// Return deferred
+	return defer.promise;
+
+};
+
