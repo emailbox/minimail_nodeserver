@@ -197,12 +197,16 @@ app.all('*',function(req,res,next){
 
 // API tools
 app.post('/api/login',api.login);
+// app.post('/api/update',api.update);
 app.post('/api/logout',api.logout);
 // app.post('/api/emails',api.emails);
 
 // Emails
 app.post('/incoming_email',api.incoming_email);
+app.post('/test_push',api.test_push);
 app.post('/wait_until_fired',api.wait_until_fired); // or "firing" I suppose
+app.post('/incoming_email_action',api.incoming_email_action);
+app.post('/incoming_minimail_action',api.incoming_minimail_action);
 
 // Static Pages
 app.get('/', function(req,res){
