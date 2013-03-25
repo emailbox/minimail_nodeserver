@@ -524,7 +524,7 @@ exports.incoming_email = function(req, res){
 
 								// Archive and Label
 								// - do it all in one!
-								// - uh, seems to be archiving FUCKING EVERYTHING
+								// - uh, seems to be archiving FUCKING EVERYTHING??
 								var archiveEventData = {
 									event: 'Email.action',
 									obj: {
@@ -710,6 +710,77 @@ exports.wait_until_fired = function(req, res){
 			var local_user = user[0],
 				emailbox_user_settings = user[1];
 
+			// Get the Threads that are now Due
+			// - emit an event that says they are now in the \\Inbox
+
+			// This doesn't tell us which Threads have already been sent to other clients (redoes all of them)
+			// - todo... (add box that says it has already been acted on)
+
+			var now = new Date(),
+				now_sec = parseInt(now.getTime() / 1000) + 200; // + 120 seconds // this should be the time of the request, according to Emailbox
+
+			// Run search
+			console.log('Running search');
+			console.log('conditions');
+			console.log(JSON.stringify({
+							'$and' : [
+								{
+									'app.AppPkgDevMinimail.wait_until' : {
+										'$lte' : now_sec
+									}
+								},
+								{
+									'app.AppPkgDevMinimail.done' : {
+										"$ne" : 1
+									}
+								}
+							]
+						}));
+			try {
+				models.Emailbox.search({
+						model: 'Thread',
+						conditions: {
+							'$and' : [
+								{
+									'app.AppPkgDevMinimail.wait_until' : {
+										'$lte' : now_sec
+									}
+								},
+								{
+									'app.AppPkgDevMinimail.done' : {
+										"$ne" : 1
+									}
+								}
+							]
+						},
+						fields: ['_id'],
+						limit: 20 // 20 due at once?
+					}, bodyObj.auth)
+					.then(function(threadObj){
+						// Emit event for each Thread that is due
+
+						// Iterate over threads
+						console.log('Iterating over Threads');
+						console.log(threadObj);
+						threadObj.forEach(function(tmp_threadObj){
+							console.log('Emitting Thread:' + tmp_threadObj.Thread._id);
+							models.Emailbox.event({
+									event: 'Thread.action',
+									obj: {
+										'_id' : tmp_threadObj.Thread._id,
+										action: 'inbox'
+									}
+								}, bodyObj.auth);
+						});
+
+					});
+			} catch(err){
+				console.log('err');
+				console.log(err);
+			}
+
+
+			console.log('Trying Android push');
 
 			try {
 				// Get android_reg_id
@@ -774,8 +845,237 @@ exports.wait_until_fired = function(req, res){
 
 		});
 
+};
+
+exports.incoming_email_action = function(req, res){
+	// Handle an action from another client
+	// - like Gmail web interface
+
+	// console.log('incoming action');
+
+	// res.send('Triggered wait_until_fired');
+
+	if(ping(req,res)){
+		return;
+	}
+
+	var bodyObj = req.body;
+	
+	if(typeof bodyObj != "object"){
+		jsonError(res, 101, "Expecting object");
+		return;
+	}
+	if(typeof bodyObj.auth.user_id != "string"){
+		jsonError(res, 101, "Expecting user_id",bodyObj);
+		return;
+	}
+
+	// If coming from ourselves, ignore it (already made the changes!)
+	if(bodyObj.auth.app == creds.app_key){
+		console.log('Emitted by ourselves, our data (app.AppPkgDevMinimail.done) already changed');
+		jsonSuccess(res, 'Emitted by ourselves');
+		return;
+	}
+
+	// User is passed along with the request
+
+	// Validate actions to take
+	if(typeof bodyObj.obj.action != 'string'){
+		console.log('Failed, expecting .action');
+		jsonError(res, 101, 'Expecting .action');
+		return;
+	}
+	if(typeof bodyObj.obj._id != 'string'){
+		console.log('Failed, expecting .action');
+		jsonError(res, 101, 'Expecting .action');
+		return;
+	}
+
+	var useLabel = false;
+	switch(bodyObj.obj.action){
+		case 'archive':
+			if(typeof bodyObj.obj.label != 'undefined'){
+				if(typeof bodyObj.obj.label != 'string'){
+					// Must be a string
+					console.log('Missing string for .label');
+					jsonError(res, 101, 'Missing string for .label');
+					return;
+				} else {
+					useLabel = true;
+				}
+			}
+		case 'inbox':
+		case 'star':
+		case 'unstar':
+		case 'read':
+		case 'unread':
+			break;
+
+		case 'label':
+		case 'unlabel':
+			useLabel = true;
+			if(typeof bodyObj.obj.label != 'string'){
+				console.log('Missing .label');
+				jsonError(res, 101, 'Missing .label');
+				return;
+			}
+			if(bodyObj.obj.label.length < 1){
+				console.log('Missing .label at least 1 character');
+				jsonError(res, 101, 'Missing .label at least 1 character');
+				return;
+			}
+			break;
+		default:
+			console.log('Invalid .action');
+			jsonError(res, 101, 'Invalid .action');
+			return;
+	}
+
+
+	// We only really care about a few events
+	// - archive, inbox : correlate to done and delays
+	switch(bodyObj.obj.action){
+		case 'archive':
+			// Moving Thread to 'done' status
+			// Get the Thread for this email
+			console.log('Archive');
+
+			// Get Email with Thread._id
+			models.Emailbox.search({
+					model: 'Email',
+					conditions: {
+						'_id' : bodyObj.obj._id
+					},
+					fields: ['attributes.thread_id'],
+					limit: 1
+				},bodyObj.auth)
+				.then(function(emailObj){
+
+					// console.log(emailObj);
+
+					// Check length of emailObj
+					if(emailObj.length != 1){
+						jsonError(res, 101, 'bad length',emailObj);
+						return false;
+					}
+
+					// Update Thread
+					// console.log('Update Thread');
+					// console.log(emailObj[0].Email.attributes.thread_id);
+					models.Emailbox.update({
+						model: 'Thread',
+						id: emailObj[0].Email.attributes.thread_id,
+						paths: {
+							'$set' : {
+								'app.AppPkgDevMinimail.done' : 1
+							}
+						}
+					},bodyObj.auth);
+				});
+
+			break;
+		case 'inbox':
+			// Moving back to the inbox
+			// - treat this as a "due now!" type of event?
+			// - don't emit any events though, or any Push Notifications
+			console.log('Inbox');
+
+			// Get Email with Thread._id
+			models.Emailbox.search({
+					model: 'Email',
+					conditions: {
+						'_id' : bodyObj.obj._id
+					},
+					fields: ['attributes.thread_id'],
+					limit: 1
+				},bodyObj.auth)
+				.then(function(emailObj){
+
+					// Check length of emailObj
+					if(emailObj.length != 1){
+						jsonError(res, 101, 'bad length',emailObj);
+						return false;
+					}
+
+					// Update Thread
+					models.Emailbox.update({
+						model: 'Thread',
+						id: emailObj[0].Email.attributes.thread_id,
+						paths: {
+							'$set' : {
+								'app.AppPkgDevMinimail.done' : 0
+							}
+						}
+					},bodyObj.auth);
+				});
+			break;
+		default:
+			console.log('nothing');
+			break;
+	}
+
+	jsonSuccess(res, 'Returning');
+
+
+};
 
 
 
+exports.incoming_minimail_action = function(req, res){
+	// Figure out if we should be firing a Push Notification to the person affected! 
+
+	var bodyObj = req.body;
+
+
+	if(ping(req,res)){
+		return;
+	}
+
+	res.send('Triggered wait_until_fired');
+	
+	// Testing out sending Push Notifications
+	// - through Parse
+
+	var getUser = Q.defer();
+
+	// Get the local user_id
+	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
+		.then(function(local_user){
+			console.log('User');
+			console.log(local_user);
+			getUser.resolve(local_user);
+		});
+
+	getUser.promise
+		.then(function(local_user){
+
+			// Send Push Notification
+			var parseRequest = {
+				channels: ['c_' + local_user.id],
+				push_time: new Date(),
+				expiration_interval: 60,
+				data: {
+					alert: bodyObj.obj.text,
+					title: "Email Reminder"
+				}
+			};
+
+			// REST API request to send Push Notification
+			models.Parse.pushNotification(parseRequest,function(e, r, outRes){
+				// result
+				if(e){
+					console.log('==Failed pushNotification');
+					console.log(e);
+					return;
+				}
+				console.log('Parse Result');
+				console.log(outRes);
+			});
+
+			return false;
+
+
+
+		});
 
 };
