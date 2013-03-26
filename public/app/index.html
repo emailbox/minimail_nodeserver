@@ -73,6 +73,7 @@
 	<script src="js/libs/jquery.hoverzoom.js"></script>
 	<!--<script src="js/libs/jquery.masonry-2.1.05.min.js"></script>-->
 	<script src="js/libs/jquery.imagesloaded.min.js"></script>
+	<script src="js/libs/jquery.qrcode.js"></script>
 
 	<!-- Flexigrid -->
 	<script src="js/libs/jquery.jeditable.js"></script>
@@ -146,9 +147,16 @@
 						<br />
 						<h2 style="color: #333;">
 							<!--Minimail is a better mobile email app. -->
+							
 							Minimail is your open source email app for mobile. 
 							<br />
 							Customizable, extensible, and personalized. 
+							
+
+							<!--
+							Finally, 
+							<h1 style="">an email client I can customize!</h1>
+							-->
 
 							<br />
 							<br />
@@ -498,6 +506,8 @@
 				<div class="container">
 					<a class="brand" href="index.html">minimail</a>
 					
+					<button class="btn qrcode_login">Login W/ QR Code</button>
+
 					<a href="#logout" class="btn btn-default pull-right">
 						Logout
 					</a>
@@ -536,6 +546,15 @@
 				<div id="css_editor"></div>
 			</div>
 
+		</div>
+
+	</script>
+
+
+	<script id="t_qrcode_login" type="text/x-handlebars-template">
+
+		<div class="qrcode_holder">
+			<div id="qrcode"></div>
 		</div>
 
 	</script>
