@@ -89,6 +89,7 @@ App.Router = Backbone.Router.extend({
 			var qs = App.Utils.getUrlVars();
 
 			if(typeof qs.access_token == "string"){
+				
 				// Have a user_token
 				// - save it to localStorage
 
