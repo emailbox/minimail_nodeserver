@@ -851,6 +851,10 @@ exports.incoming_email_action = function(req, res){
 	// Handle an action from another client
 	// - like Gmail web interface
 
+	// Handles:
+	// - Email.action
+	// - Thread.action
+
 	// console.log('incoming action');
 
 	// res.send('Triggered wait_until_fired');
@@ -932,6 +936,34 @@ exports.incoming_email_action = function(req, res){
 	}
 
 
+	// Email or Thread?
+	// - by default: bodyObj.event == 'Email.action'
+	var searchData = {
+		model: 'Email',
+		conditions: {
+			_id: bodyObj.obj._id // only difference with above (refactor)
+		},
+		fields: ['attributes.thread_id'],
+		limit: 1,
+		sort: {
+			_id : -1
+		}
+	};
+
+	if(bodyObj.event == 'Thread.action'){
+		// Using a thread, need to get an email for that/each Thread!
+
+		// Should get an Email foreach Thread
+		// - could be passing alot of Threads?
+		searchData['conditions'] = {
+			'attributes.thread_id': bodyObj.obj._id
+		};
+		searchData['limit'] = 100 // 100 emails per thread allowed to be changed (fixed issue with not all Threads being affected?)
+
+	}
+	
+
+
 	// We only really care about a few events
 	// - archive, inbox : correlate to done and delays
 	switch(bodyObj.obj.action){
@@ -941,21 +973,18 @@ exports.incoming_email_action = function(req, res){
 			console.log('Archive');
 
 			// Get Email with Thread._id
-			models.Emailbox.search({
-					model: 'Email',
-					conditions: {
-						'_id' : bodyObj.obj._id
-					},
-					fields: ['attributes.thread_id'],
-					limit: 1
-				},bodyObj.auth)
+			models.Emailbox.search(searchData,bodyObj.auth)
 				.then(function(emailObj){
 
 					// console.log(emailObj);
 
 					// Check length of emailObj
-					if(emailObj.length != 1){
-						jsonError(res, 101, 'bad length',emailObj);
+					if(emailObj.length < 1){
+						jsonError(res, 101, 'bad length1',emailObj);
+						return false;
+					}
+					if(emailObj.length > 100){
+						jsonError(res, 101, 'bad length2',emailObj);
 						return false;
 					}
 
@@ -981,19 +1010,16 @@ exports.incoming_email_action = function(req, res){
 			console.log('Inbox');
 
 			// Get Email with Thread._id
-			models.Emailbox.search({
-					model: 'Email',
-					conditions: {
-						'_id' : bodyObj.obj._id
-					},
-					fields: ['attributes.thread_id'],
-					limit: 1
-				},bodyObj.auth)
+			models.Emailbox.search(searchData,bodyObj.auth)
 				.then(function(emailObj){
 
 					// Check length of emailObj
-					if(emailObj.length != 1){
-						jsonError(res, 101, 'bad length',emailObj);
+					if(emailObj.length < 1){
+						jsonError(res, 101, 'bad length1',emailObj);
+						return false;
+					}
+					if(emailObj.length > 100){
+						jsonError(res, 101, 'bad length2',emailObj);
 						return false;
 					}
 
