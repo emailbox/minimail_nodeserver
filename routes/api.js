@@ -239,6 +239,7 @@ exports.incoming_email = function(req, res){
 			},
 			fields: ['app.AppPkgDevMinimail',
 					 'attributes.thread_id',
+					 'common.date_sec',
 					 'original.TextBody',
 					 'original.labels',
 					 'original.headers.From',
@@ -396,6 +397,7 @@ exports.incoming_email = function(req, res){
 
 							var isleisure = false;
 							var leisureFilters = []; // List of filters belongs to
+							var leisureFilterIds = []; // List of filters belongs to
 							// console.log('leisureData');
 							// console.log(leisureData);
 							leisureData.forEach(function(leisure){
@@ -437,6 +439,7 @@ exports.incoming_email = function(req, res){
 												if(regex.test(email_value) == true){
 													isleisure = true;
 													matched_filter = true;
+													leisureFilterIds.push(leisure.AppMinimailLeisureFilter._id);
 													leisureFilters.push({
 														_id: leisure.AppMinimailLeisureFilter._id,
 														name: leisure.AppMinimailLeisureFilter.name
@@ -518,6 +521,32 @@ exports.incoming_email = function(req, res){
 										console.log('Updated thread leisure_filters');
 									});
 
+								// Update LeisureFilter with latest email datetime
+								var updateLeisurePathsData = {
+									"$set" : {
+										"attributes.last_message_datetime_sec" : email.Email.common.date_sec
+									}
+								};
+								var updateLeisureData = {
+									model: 'AppMinimailLeisureFilter',
+									conditions: {
+										"_id" : {
+											"$in" : leisureFilterIds
+										}
+									},
+									paths: updateLeisurePathsData,
+									multi: true
+								};
+								models.Emailbox.update(updateLeisureData,bodyObj.auth)
+									.then(function(dataResponse){
+										if(dataResponse != 1){
+											console.log('Failed updating leisure threads with latest email');
+											console.log(dataResponse);
+											return;
+										}
+										console.log('Updated leisure_filters with latest');
+									});
+
 								// Update gmail inbox
 								// - label
 								// - archive
@@ -543,7 +572,7 @@ exports.incoming_email = function(req, res){
 
 							} else {
 								// Not a leisure email
-								console.log('NOT leasure email');
+								console.log('NOT a leasure email');
 
 
 								// Send Push Notification
