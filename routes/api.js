@@ -522,11 +522,15 @@ exports.incoming_email = function(req, res){
 									});
 
 								// Update LeisureFilter with latest email datetime
+								var last_message = new Date();
+								last_message = last_message.getTime() / 1000;
+								last_message = parseInt(last_message);
 								var updateLeisurePathsData = {
 									"$set" : {
 										"attributes.last_message_datetime_sec" : email.Email.common.date_sec
 									}
 								};
+								console.log(last_message);
 								var updateLeisureData = {
 									model: 'AppMinimailLeisureFilter',
 									conditions: {
@@ -539,7 +543,7 @@ exports.incoming_email = function(req, res){
 								};
 								models.Emailbox.update(updateLeisureData,bodyObj.auth)
 									.then(function(dataResponse){
-										if(dataResponse != 1){
+										if(dataResponse < 1){
 											console.log('Failed updating leisure threads with latest email');
 											console.log(dataResponse);
 											return;
