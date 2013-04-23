@@ -11,12 +11,27 @@
             "emit": ["Minimail.*", "Email.*", "Thread.*", "AppPkgDevMinimail"],
             "listen": {
                 "Email.new": {
-                    "url": "https://minimail.herokuapp.com/incoming_email",
+                    "url": "http://minimail.getemailbox.com/incoming_email",
+                    "follow": [],
+                    "conditions": {}
+                },
+                "Email.action": {
+                    "url": "http://minimail.getemailbox.com/incoming_email_action",
+                    "follow": [],
+                    "conditions": {}
+                },
+                "Thread.action": {
+                    "url": "http://minimail.getemailbox.com/incoming_email_action",
+                    "follow": [],
+                    "conditions": {}
+                },
+                "Minimail.action": {
+                    "url": "http://minimail.getemailbox.com/incoming_minimail_action",
                     "follow": [],
                     "conditions": {}
                 },
                 "Minimail.wait_until_fired": {
-                    "url": "https://minimail.herokuapp.com/wait_until_fired",
+                    "url": "http://minimail.getemailbox.com/wait_until_fired",
                     "follow": [],
                     "conditions": {}
                 }
