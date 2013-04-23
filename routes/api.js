@@ -613,7 +613,10 @@ exports.incoming_email = function(req, res){
 											alert: email.Email.original.TextBody.substr(0,100),
 											threadid: email.Email.attributes.thread_id,
 											summary: email.Email.original.TextBody.substr(0,100),
-											title: email.Email.original.headers.Subject
+											title: email.Email.original.headers.Subject,
+
+											message: email.Email.original.TextBody.substr(0,100), // displayed in notification bar
+											msgcnt: 2
 										};
 
 										// Push to Android
@@ -753,22 +756,22 @@ exports.wait_until_fired = function(req, res){
 				now_sec = parseInt(now.getTime() / 1000) + 200; // + 120 seconds // this should be the time of the request, according to Emailbox
 
 			// Run search
-			console.log('Running search');
-			console.log('conditions');
-			console.log(JSON.stringify({
-							'$and' : [
-								{
-									'app.AppPkgDevMinimail.wait_until' : {
-										'$lte' : now_sec
-									}
-								},
-								{
-									'app.AppPkgDevMinimail.done' : {
-										"$ne" : 1
-									}
-								}
-							]
-						}));
+			// console.log('Running search');
+			// console.log('conditions');
+			// console.log(JSON.stringify({
+			// 				'$and' : [
+			// 					{
+			// 						'app.AppPkgDevMinimail.wait_until' : {
+			// 							'$lte' : now_sec
+			// 						}
+			// 					},
+			// 					{
+			// 						'app.AppPkgDevMinimail.done' : {
+			// 							"$ne" : 1
+			// 						}
+			// 					}
+			// 				]
+			// 			}));
 			try {
 				models.Emailbox.search({
 						model: 'Thread',
@@ -793,8 +796,8 @@ exports.wait_until_fired = function(req, res){
 						// Emit event for each Thread that is due
 
 						// Iterate over threads
-						console.log('Iterating over Threads');
-						console.log(threadObj);
+						// console.log('Iterating over Threads');
+						// console.log(threadObj);
 						threadObj.forEach(function(tmp_threadObj){
 							console.log('Emitting Thread:' + tmp_threadObj.Thread._id);
 							models.Emailbox.event({
@@ -806,48 +809,59 @@ exports.wait_until_fired = function(req, res){
 								}, bodyObj.auth);
 						});
 
+						// If none are due, then don't send an Android Push
+						if(threadObj.length > 0){
+							// Some are due now
+							// - at least 1
+
+							console.log('Trying Android push');
+
+							try {
+								// Get android_reg_id
+								var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
+								if(android_reg_id && android_reg_id.length > 10){
+
+									var dataToPush = {
+										threadid: bodyObj.obj.threadid || '',
+										alert: bodyObj.obj.text,
+										title: "Email Reminder",
+										message: "Email(s) Due",
+										msgcnt: threadObj.length // how many are actually due?
+									};
+
+									// Push to Android
+									models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
+										.then(function(pushResult){
+											console.log('Result');
+											console.log(pushResult.result);
+											if(pushResult.err){
+												console.log('Error with result');
+												console.log(pushResult.err);
+											}
+											if(!pushResult.result.success){
+												// Seems to have had an error
+												console.log('--result.success not 1');
+											}
+										});
+
+								}
+
+							} catch(err){
+								// Failed sending Push for some reason
+								console.log("Failed sending Push when we really wanted to (for a wait)");
+								console.log(err);
+							}
+
+						} else {
+							console.log('None Due, so not sending a Push Notification');
+						}
+
 					});
 			} catch(err){
 				console.log('err');
 				console.log(err);
 			}
 
-
-			console.log('Trying Android push');
-
-			try {
-				// Get android_reg_id
-				var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
-				if(android_reg_id && android_reg_id.length > 10){
-
-					var dataToPush = {
-						threadid: bodyObj.obj.threadid,
-						alert: bodyObj.obj.text,
-						title: "Email Reminder"
-					};
-
-					// Push to Android
-					models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
-						.then(function(pushResult){
-							console.log('Result');
-							console.log(pushResult.result);
-							if(pushResult.err){
-								console.log('Error with result');
-								console.log(pushResult.err);
-							}
-							if(!pushResult.result.success){
-								// Seems to have had an error
-								console.log('--result.success not 1');
-							}
-						});
-
-				}
-
-			} catch(err){
-				// Failed sending Push for some reason
-				console.log("Failed sending Push when we really wanted to (for a wait)");
-				console.log(err);
-			}
 
 			// // Send Push Notification
 			// var parseRequest = {
