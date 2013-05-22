@@ -239,6 +239,7 @@ exports.incoming_email = function(req, res){
 			},
 			fields: ['app.AppPkgDevMinimail',
 					 'attributes.thread_id',
+					 'common.date_sec',
 					 'original.TextBody',
 					 'original.labels',
 					 'original.headers.From',
@@ -396,6 +397,7 @@ exports.incoming_email = function(req, res){
 
 							var isleisure = false;
 							var leisureFilters = []; // List of filters belongs to
+							var leisureFilterIds = []; // List of filters belongs to
 							// console.log('leisureData');
 							// console.log(leisureData);
 							leisureData.forEach(function(leisure){
@@ -437,6 +439,7 @@ exports.incoming_email = function(req, res){
 												if(regex.test(email_value) == true){
 													isleisure = true;
 													matched_filter = true;
+													leisureFilterIds.push(leisure.AppMinimailLeisureFilter._id);
 													leisureFilters.push({
 														_id: leisure.AppMinimailLeisureFilter._id,
 														name: leisure.AppMinimailLeisureFilter.name
@@ -518,6 +521,36 @@ exports.incoming_email = function(req, res){
 										console.log('Updated thread leisure_filters');
 									});
 
+								// Update LeisureFilter with latest email datetime
+								var last_message = new Date();
+								last_message = last_message.getTime() / 1000;
+								last_message = parseInt(last_message);
+								var updateLeisurePathsData = {
+									"$set" : {
+										"attributes.last_message_datetime_sec" : email.Email.common.date_sec
+									}
+								};
+								console.log(last_message);
+								var updateLeisureData = {
+									model: 'AppMinimailLeisureFilter',
+									conditions: {
+										"_id" : {
+											"$in" : leisureFilterIds
+										}
+									},
+									paths: updateLeisurePathsData,
+									multi: true
+								};
+								models.Emailbox.update(updateLeisureData,bodyObj.auth)
+									.then(function(dataResponse){
+										if(dataResponse < 1){
+											console.log('Failed updating leisure threads with latest email');
+											console.log(dataResponse);
+											return;
+										}
+										console.log('Updated leisure_filters with latest');
+									});
+
 								// Update gmail inbox
 								// - label
 								// - archive
@@ -543,7 +576,11 @@ exports.incoming_email = function(req, res){
 
 							} else {
 								// Not a leisure email
+<<<<<<< HEAD
 								console.log('NOT leisure email');
+=======
+								console.log('NOT a leasure email');
+>>>>>>> c1b3656ea6fba27179bdc6ec06451a3e48dd67ab
 
 
 								// Send Push Notification
@@ -580,7 +617,10 @@ exports.incoming_email = function(req, res){
 											alert: email.Email.original.TextBody.substr(0,100),
 											threadid: email.Email.attributes.thread_id,
 											summary: email.Email.original.TextBody.substr(0,100),
-											title: email.Email.original.headers.Subject
+											title: email.Email.original.headers.Subject,
+
+											message: email.Email.original.TextBody.substr(0,100), // displayed in notification bar
+											msgcnt: 2
 										};
 
 										// Push to Android
@@ -724,22 +764,22 @@ exports.wait_until_fired = function(req, res){
 				now_sec = parseInt(now.getTime() / 1000) + 200; // + 120 seconds // this should be the time of the request, according to Emailbox
 
 			// Run search
-			console.log('Running search');
-			console.log('conditions');
-			console.log(JSON.stringify({
-							'$and' : [
-								{
-									'app.AppPkgDevMinimail.wait_until' : {
-										'$lte' : now_sec
-									}
-								},
-								{
-									'app.AppPkgDevMinimail.done' : {
-										"$ne" : 1
-									}
-								}
-							]
-						}));
+			// console.log('Running search');
+			// console.log('conditions');
+			// console.log(JSON.stringify({
+			// 				'$and' : [
+			// 					{
+			// 						'app.AppPkgDevMinimail.wait_until' : {
+			// 							'$lte' : now_sec
+			// 						}
+			// 					},
+			// 					{
+			// 						'app.AppPkgDevMinimail.done' : {
+			// 							"$ne" : 1
+			// 						}
+			// 					}
+			// 				]
+			// 			}));
 			try {
 				models.Emailbox.search({
 						model: 'Thread',
@@ -773,8 +813,8 @@ exports.wait_until_fired = function(req, res){
 						}
 
 						// Iterate over threads
-						console.log('Iterating over Threads');
-						console.log(threadObj);
+						// console.log('Iterating over Threads');
+						// console.log(threadObj);
 						threadObj.forEach(function(tmp_threadObj){
 							console.log('Emitting Thread:' + tmp_threadObj.Thread._id);
 							models.Emailbox.event({
@@ -785,6 +825,7 @@ exports.wait_until_fired = function(req, res){
 									}
 								}, bodyObj.auth);
 						});
+
 
 					});
 			} catch(err){
@@ -828,6 +869,64 @@ exports.wait_until_fired = function(req, res){
 				}
 			};
 
+
+			/*
+						// If none are due, then don't send an Android Push
+						if(threadObj.length > 0){
+							// Some are due now
+							// - at least 1
+
+							console.log('Trying Android push');
+
+							try {
+								// Get android_reg_id
+								var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
+								if(android_reg_id && android_reg_id.length > 10){
+
+									var dataToPush = {
+										threadid: bodyObj.obj.threadid || '',
+										alert: bodyObj.obj.text,
+										title: "Email Reminder",
+										message: "Email(s) Due",
+										msgcnt: threadObj.length // how many are actually due?
+									};
+
+									// Push to Android
+									models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
+										.then(function(pushResult){
+											console.log('Result');
+											console.log(pushResult.result);
+											if(pushResult.err){
+												console.log('Error with result');
+												console.log(pushResult.err);
+											}
+											if(!pushResult.result.success){
+												// Seems to have had an error
+												console.log('--result.success not 1');
+											}
+										});
+
+								}
+
+							} catch(err){
+								// Failed sending Push for some reason
+								console.log("Failed sending Push when we really wanted to (for a wait)");
+								console.log(err);
+							}
+
+						} else {
+							console.log('None Due, so not sending a Push Notification');
+						}
+
+					});
+			} catch(err){
+				console.log('err');
+				console.log(err);
+			}
+>>>>>>> c1b3656ea6fba27179bdc6ec06451a3e48dd67ab
+			*/
+
+
 			// // Send Push Notification
 			// var parseRequest = {
 			// 	channels: ['c_' + local_user.id],
@@ -862,6 +961,10 @@ exports.wait_until_fired = function(req, res){
 exports.incoming_email_action = function(req, res){
 	// Handle an action from another client
 	// - like Gmail web interface
+
+	// Handles:
+	// - Email.action
+	// - Thread.action
 
 	// console.log('incoming action');
 
@@ -944,6 +1047,34 @@ exports.incoming_email_action = function(req, res){
 	}
 
 
+	// Email or Thread?
+	// - by default: bodyObj.event == 'Email.action'
+	var searchData = {
+		model: 'Email',
+		conditions: {
+			_id: bodyObj.obj._id // only difference with above (refactor)
+		},
+		fields: ['attributes.thread_id'],
+		limit: 1,
+		sort: {
+			_id : -1
+		}
+	};
+
+	if(bodyObj.event == 'Thread.action'){
+		// Using a thread, need to get an email for that/each Thread!
+
+		// Should get an Email foreach Thread
+		// - could be passing alot of Threads?
+		searchData['conditions'] = {
+			'attributes.thread_id': bodyObj.obj._id
+		};
+		searchData['limit'] = 100 // 100 emails per thread allowed to be changed (fixed issue with not all Threads being affected?)
+
+	}
+	
+
+
 	// We only really care about a few events
 	// - archive, inbox : correlate to done and delays
 	switch(bodyObj.obj.action){
@@ -953,21 +1084,18 @@ exports.incoming_email_action = function(req, res){
 			console.log('Archive');
 
 			// Get Email with Thread._id
-			models.Emailbox.search({
-					model: 'Email',
-					conditions: {
-						'_id' : bodyObj.obj._id
-					},
-					fields: ['attributes.thread_id'],
-					limit: 1
-				},bodyObj.auth)
+			models.Emailbox.search(searchData,bodyObj.auth)
 				.then(function(emailObj){
 
 					// console.log(emailObj);
 
 					// Check length of emailObj
-					if(emailObj.length != 1){
-						jsonError(res, 101, 'bad length',emailObj);
+					if(emailObj.length < 1){
+						jsonError(res, 101, 'bad length1',emailObj);
+						return false;
+					}
+					if(emailObj.length > 100){
+						jsonError(res, 101, 'bad length2',emailObj);
 						return false;
 					}
 
@@ -993,19 +1121,16 @@ exports.incoming_email_action = function(req, res){
 			console.log('Inbox');
 
 			// Get Email with Thread._id
-			models.Emailbox.search({
-					model: 'Email',
-					conditions: {
-						'_id' : bodyObj.obj._id
-					},
-					fields: ['attributes.thread_id'],
-					limit: 1
-				},bodyObj.auth)
+			models.Emailbox.search(searchData,bodyObj.auth)
 				.then(function(emailObj){
 
 					// Check length of emailObj
-					if(emailObj.length != 1){
-						jsonError(res, 101, 'bad length',emailObj);
+					if(emailObj.length < 1){
+						jsonError(res, 101, 'bad length1',emailObj);
+						return false;
+					}
+					if(emailObj.length > 100){
+						jsonError(res, 101, 'bad length2',emailObj);
 						return false;
 					}
 

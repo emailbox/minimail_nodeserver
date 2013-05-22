@@ -25,12 +25,36 @@ App.Views.Body = Backbone.View.extend({
 	el: 'body',
 
 	events: {
-
+		'click .qrcode_login' : 'qrcode_login'
 	},
 
 	initialize: function() {
 		_.bindAll(this, 'render');
 
+	},
+
+	qrcode_login: function(ev){
+		// Render qrcode
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Remove Previous
+		$('.qrcode_holder').remove();
+
+		// Template
+		var template = App.Utils.template('t_qrcode_login');
+
+		// Write HTML
+		this.$('.body_container').prepend(template());
+
+		// Write qrcode text
+		$('#qrcode').qrcode({
+			width: 500,
+			height: 500,
+			text: App.Credentials.access_token + '+' + App.Credentials.user
+		});
+
+		return false;
 	},
 
 	render: function() {

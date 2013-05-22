@@ -17,8 +17,7 @@ Run your own minimail server instance. Easily deploy to heroku for piggyback SSL
 - Send Push Notifications (broken)
 
 ## Current status  
-- Push Notifications don't work right now, switching from Parse to something phonegap supports easier
-- want to switch to heroku's postgres
+- It works.
 
 
 
