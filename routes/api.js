@@ -576,11 +576,7 @@ exports.incoming_email = function(req, res){
 
 							} else {
 								// Not a leisure email
-<<<<<<< HEAD
-								console.log('NOT leisure email');
-=======
 								console.log('NOT a leasure email');
->>>>>>> c1b3656ea6fba27179bdc6ec06451a3e48dd67ab
 
 
 								// Send Push Notification

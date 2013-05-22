@@ -17,6 +17,7 @@ App.Router = Backbone.Router.extend({
 		'intro' : 'intro',
 		'preview_sending/:id' : 'preview_sending',
 
+		'login' : 'login',
 		'logout' : 'logout'
 		
 	},
@@ -109,6 +110,22 @@ App.Router = Backbone.Router.extend({
 			return;
 		} 
 
+	},
+
+	login: function(){
+
+		var p = {
+			response_type: 'token',
+			client_id : App.Credentials.app_key,
+			redirect_uri : [location.protocol, '//', location.host, location.pathname].join('')
+			// state // optional
+			// x_user_id // optional	
+		};
+		var params = $.param(p);
+		
+		window.location = App.Credentials.base_api_url + "/apps/authorize/?" + params;
+
+		return;
 	},
 
 	intro: function(){
