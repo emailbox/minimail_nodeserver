@@ -463,7 +463,7 @@ exports.incoming_email = function(req, res){
 								// - now what do I do with it? 
 								// - NO push notification
 
-								// console.log('Leasure email, not sending a Push Notification');
+								// console.log('Leisure email, not sending a Push Notification');
 
 								// Modify the email to include Leisure info
 								// - move to the correct Leisure collection? 
@@ -526,9 +526,9 @@ exports.incoming_email = function(req, res){
 								// - do it all in one!
 								// - uh, seems to be archiving FUCKING EVERYTHING??
 								var archiveEventData = {
-									event: 'Email.action',
+									event: 'Thread.action',
 									obj: {
-										'_id' : email.Email._id,
+										'_id' : email.Email.attributes.thread_id,
 										action : 'archive',
 										label: 'leisure', //leisureFilters[0].name
 									}
@@ -543,7 +543,7 @@ exports.incoming_email = function(req, res){
 
 							} else {
 								// Not a leisure email
-								console.log('NOT leasure email');
+								console.log('NOT leisure email');
 
 
 								// Send Push Notification
@@ -653,6 +653,8 @@ exports.wait_until_fired = function(req, res){
 		return;
 	}
 
+	console.log('triggered');
+	
 	res.send('Triggered wait_until_fired');
 	
 	// Testing out sending Push Notifications
@@ -716,6 +718,8 @@ exports.wait_until_fired = function(req, res){
 			// This doesn't tell us which Threads have already been sent to other clients (redoes all of them)
 			// - todo... (add box that says it has already been acted on)
 
+			var dfdPushNotification = Q.defer();
+
 			var now = new Date(),
 				now_sec = parseInt(now.getTime() / 1000) + 200; // + 120 seconds // this should be the time of the request, according to Emailbox
 
@@ -759,6 +763,15 @@ exports.wait_until_fired = function(req, res){
 					.then(function(threadObj){
 						// Emit event for each Thread that is due
 
+						console.log('threadObj2');
+						console.log(threadObj);
+
+						// Any actually due?
+						// - trigger Push Notifications if it is the case
+						if(threadObj.length > 0){
+							ignitePush();
+						}
+
 						// Iterate over threads
 						console.log('Iterating over Threads');
 						console.log(threadObj);
@@ -779,42 +792,41 @@ exports.wait_until_fired = function(req, res){
 				console.log(err);
 			}
 
+			var ignitePush = function(){
+				try {
+					// Get android_reg_id
+					var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
+					if(android_reg_id && android_reg_id.length > 10){
 
-			console.log('Trying Android push');
+						var dataToPush = {
+							threadid: bodyObj.obj.threadid,
+							alert: bodyObj.obj.text,
+							title: "Email Reminder"
+						};
 
-			try {
-				// Get android_reg_id
-				var android_reg_id = emailbox_user_settings.AppMinimailSettings.android_reg_id;
-				if(android_reg_id && android_reg_id.length > 10){
+						// Push to Android
+						models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
+							.then(function(pushResult){
+								console.log('Result');
+								console.log(pushResult.result);
+								if(pushResult.err){
+									console.log('Error with result');
+									console.log(pushResult.err);
+								}
+								if(!pushResult.result.success){
+									// Seems to have had an error
+									console.log('--result.success not 1');
+								}
+							});
 
-					var dataToPush = {
-						threadid: bodyObj.obj.threadid,
-						alert: bodyObj.obj.text,
-						title: "Email Reminder"
-					};
+					}
 
-					// Push to Android
-					models.Api.pushToAndroid(android_reg_id, dataToPush, 'Email Reminders', null, null)
-						.then(function(pushResult){
-							console.log('Result');
-							console.log(pushResult.result);
-							if(pushResult.err){
-								console.log('Error with result');
-								console.log(pushResult.err);
-							}
-							if(!pushResult.result.success){
-								// Seems to have had an error
-								console.log('--result.success not 1');
-							}
-						});
-
+				} catch(err){
+					// Failed sending Push for some reason
+					console.log("Failed sending Push when we really wanted to (for a wait)");
+					console.log(err);
 				}
-
-			} catch(err){
-				// Failed sending Push for some reason
-				console.log("Failed sending Push when we really wanted to (for a wait)");
-				console.log(err);
-			}
+			};
 
 			// // Send Push Notification
 			// var parseRequest = {
@@ -1026,6 +1038,8 @@ exports.incoming_minimail_action = function(req, res){
 
 	var bodyObj = req.body;
 
+	console.log('bodyObj');
+	console.log(bodyObj);
 
 	if(ping(req,res)){
 		return;
