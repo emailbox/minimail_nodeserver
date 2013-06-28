@@ -299,6 +299,10 @@ exports.pushToAndroid = function(registration_id, data, collapseKey, timeToLive,
 	registrationIds.push(registration_id);
 
 	// Parameters: message-literal, registrationIds-array, No. of retries, callback-function
+
+	// process.nextTick(function(){
+	// 	var err = null,
+	// 		result = "imposter";
 	gcm_sender.send(message, registrationIds, numRetries, function (err, result) {
 
 		// console.log('GCM result');
