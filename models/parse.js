@@ -20,7 +20,7 @@ exports.pushNotification = function(parseRequest, callback){
 		port: 80,
 		method: 'POST',
 		json: true,
-		body: JSON.stringify(parseRequest),
+		body: parseRequest,
 		headers: {
 			"X-Parse-Application-Id" : creds.parse_application_id,
 			"X-Parse-REST-API-Key" : creds.parse_rest_api_key

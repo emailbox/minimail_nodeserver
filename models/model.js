@@ -109,7 +109,6 @@ exports.mysql = mysqlPool;
 exports.Api = require('./api.js');
 exports.Emailbox = require('./emailbox.js');
 exports.User = require('./user.js');
-exports.Parse = require('./parse.js');
-// exports.Payment = require('./payment.js');
+exports.Stats = require('./stats.js');
 
 

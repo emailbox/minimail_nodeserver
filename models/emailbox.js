@@ -54,7 +54,7 @@ exports.query = function(url,data,user){
 	// console.log(user);
 
 	var options = {
-		url: 'https://getemailbox.com/' + url,
+		url: 'https://api.getemailbox.com/' + url,
 		port: 80,
 		method: 'POST',
 		json: true,

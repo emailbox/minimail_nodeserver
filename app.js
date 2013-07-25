@@ -34,24 +34,6 @@ var http = require('http');
 
 var server = http.createServer(app);
 var urlLib = require('url');
-// var eventSocket = null;
-
-// var flash = require('connect-flash');
-
-// validator.check, validator.sanitize
-
-// S3
-// var awssum = require('awssum');
-// var amazon = awssum.load('amazon/amazon');
-// var S3 = awssum.load('amazon/s3').S3;
-
-// var s3 = new S3({
-//  'accessKeyId'     : creds.aws_access_key,
-//  'secretAccessKey' : creds.aws_secret_key,
-//  'region'          : amazon.US_WEST_1
-// });
-
-
 
 // cross-domain middleware
 var allowCrossDomain = function(req, res, next) {
@@ -59,7 +41,6 @@ var allowCrossDomain = function(req, res, next) {
 	res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
 	//res.header("Access-Control-Allow-Headers", "X-Requested-With");
-
 	next();
 }
 
@@ -81,22 +62,16 @@ app.configure(function(){
 	app.set('port', process.env.PORT || 8088);
 	app.set('views', __dirname + '/views');
 	app.set('view engine', 'jade');
-	// app.set('view options', {
-	//   layout: false
-	// });
 
-	// app.set('view engine', 'hbs');
-
-	app.use(allowCrossDomain); // needs to be above Passport(?)
-
+	app.use(allowCrossDomain);
 	app.use(express.favicon());
 	app.use(express.logger('dev'));
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
-	app.use(express.cookieParser('k2jsi98y9dsdjjkas5dda4'));
+	app.use(express.cookieParser(creds.cookie_key));
 	
 	app.use(express.session({ 
-		secret: 'k2jsi98y9dsdjjkas5dda4'
+		secret: creds.session_secret
 		// store: new MemoryStore
 	}));
 
@@ -207,6 +182,9 @@ app.post('/test_push',api.test_push);
 app.post('/wait_until_fired',api.wait_until_fired); // or "firing" I suppose
 app.post('/incoming_email_action',api.incoming_email_action);
 app.post('/incoming_minimail_action',api.incoming_minimail_action);
+app.post('/stats',api.stats);
+app.post('/fullcontact',api.fullcontact);
+app.post('/textteaser',api.textteaser);
 
 // Static Pages
 app.get('/', function(req,res){

@@ -27,7 +27,7 @@ function ping(req,res){
 		res.send({
 			ping: true
 		});
-
+		console.log('pinged');
 		return true;
 	}
 
@@ -619,20 +619,20 @@ exports.incoming_email = function(req, res){
 											msgcnt: 2
 										};
 
-										// Push to Android
-										models.Api.pushToAndroid(android_reg_id, dataToPush, 'New Emails', null, null)
-											.then(function(pushResult){
-												console.log('Result');
-												console.log(pushResult.result);
-												if(pushResult.err){
-													console.log('Error with result');
-													console.log(pushResult.err);
-												}
-												if(!pushResult.result.success){
-													// Seems to have had an error
-													console.log('--result.success not 1');
-												}
-											});
+										// // Push to Android
+										// models.Api.pushToAndroid(android_reg_id, dataToPush, 'New Emails', null, null)
+										// 	.then(function(pushResult){
+										// 		console.log('Result');
+										// 		console.log(pushResult.result);
+										// 		if(pushResult.err){
+										// 			console.log('Error with result');
+										// 			console.log(pushResult.err);
+										// 		}
+										// 		if(!pushResult.result.success){
+										// 			// Seems to have had an error
+										// 			console.log('--result.success not 1');
+										// 		}
+										// 	});
 
 									}
 
@@ -1214,3 +1214,220 @@ exports.incoming_minimail_action = function(req, res){
 		});
 
 };
+
+
+
+exports.stats = function(req, res){
+	// Gets stats for a person
+	// - does a realtime lookup, doesn't cache anything
+
+	var bodyObj = req.body;
+
+	if(ping(req,res)){
+		return;
+	}
+
+	var getUser = Q.defer();
+
+	// Get the local user_id
+	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
+		.then(function(local_user){;
+			getUser.resolve(local_user);
+		})
+		.fail(function(errData){
+			jsonError(res, 101, 'Failed authorizing user');
+		});
+
+	getUser.promise
+		.then(function(local_user){
+
+			console.log('Perform each search');
+
+			// Timezone offset
+			var timezone_offset = parseInt(bodyObj.obj.timezone_offset, 10) || 0;
+
+			// Perform each search
+			// - not in parallel against the user's DB
+			var resultsDeferred = [];
+			
+			// 0 - sent vs received
+			resultsDeferred.push(models.Stats.sent_vs_received(bodyObj, timezone_offset));
+
+			// Wait for all searches to have been performed
+			Q.allResolved(resultsDeferred)
+				.then(function(promises){
+
+					// All searches complete
+					// - get all of them and return along with indexKey
+					var endResults = {};
+					promises.forEach(function (promise, index) {
+						var tmp_val = promise.valueOf();
+
+						if(index == 0){
+							endResults['sent_vs_received'] = tmp_val;
+						}
+
+					});
+					jsonSuccess(res, '', endResults);
+				})
+				.fail(function(data){
+					// data == [ indexKey, errCode, errMsg, errData ]
+					console.log('fail runEventCreate multiple');
+					console.log(data);
+					jsonError(res, 101, "Failed creating multiple events");
+				});
+
+
+		});
+
+};
+
+
+exports.fullcontact = function(req, res){
+	// Gets fullcontact data for a person
+	// - does a realtime lookup, doesn't cache anything
+
+	var bodyObj = req.body;
+
+	if(ping(req,res)){
+		return;
+	}
+	
+
+	var getUser = Q.defer();
+
+	// Get the local user_id
+	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
+		.then(function(local_user){;
+			getUser.resolve(local_user);
+		})
+		.fail(function(errData){
+			jsonError(res, 101, 'Failed authorizing user');
+		});
+
+	getUser.promise
+		.then(function(local_user){
+
+			console.log('Gathering FullContact data');
+
+			// Get the email to test
+			if(typeof bodyObj.obj.email != "string"){
+				jsonError(res, 101, "Invalid email provided");
+				return;
+			}
+
+			var email = bodyObj.obj.email.toLowerCase();
+
+			var url = 'https://api.fullcontact.com/v2/person.json?email=' + email + '&apiKey=' + creds.fullcontact_api_key;
+
+			var options = {
+				url: url,
+				port: 80,
+				method: 'GET'
+			};
+
+			var outReq = request.post(options, function(e, r, outRes) {
+
+				// Got response from fullContact
+				console.log('Got response from FullContact');
+
+				try {
+					if(typeof outRes == "string"){
+						outRes = JSON.parse(outRes);
+					}
+					
+					res.send({
+						code: 200,
+						fullcontact_data: outRes
+					});
+
+				} catch(err){
+					console.log('FullContact parsing error');
+					console.log(err);
+				}
+
+			});
+
+		});
+
+};
+
+
+exports.textteaser = function(req, res){
+	// Gets fullcontact data for a person
+	// - does a realtime lookup, doesn't cache anything
+
+	var bodyObj = req.body;
+
+	if(ping(req,res)){
+		return;
+	}
+	
+
+	var getUser = Q.defer();
+
+	// Get the local user_id
+	models.User.get_local_by_emailbox_id(bodyObj.auth.user_id)
+		.then(function(local_user){;
+			getUser.resolve(local_user);
+		})
+		.fail(function(errData){
+			jsonError(res, 101, 'Failed authorizing user');
+		});
+
+	getUser.promise
+		.then(function(local_user){
+
+			console.log('Gathering TextTeaser data');
+
+			// Get the email to test
+			if(typeof bodyObj.obj.text != "string"){
+				jsonError(res, 101, "Invalid text provided");
+				return;
+			}
+			if(typeof bodyObj.obj.title != "string"){
+				jsonError(res, 101, "Invalid title provided");
+				return;
+			}
+
+			var url = 'http://www.textteaser.com/api/';
+
+			var options = {
+				url: url,
+				port: 80,
+				method: 'POST',
+				body: {
+					token: creds.textteaser_api_token,
+					text: bodyObj.obj.text,
+					title: bodyObj.obj.title
+				}
+			};
+
+			console.log(options);
+
+			var outReq = request.post(options, function(e, r, outRes) {
+
+				// Got response from TextTeaser
+				console.log('Got response from TextTeaser');
+
+				try {
+					if(typeof outRes == "string"){
+						outRes = JSON.parse(outRes);
+					}
+					
+					res.send({
+						code: 200,
+						textteaser_data: outRes
+					});
+
+				} catch(err){
+					console.log('Textteaser parsing error');
+					console.log(err);
+				}
+
+			});
+
+		});
+
+};
+
